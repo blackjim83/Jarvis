@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#03080c">
+<title>Jarvis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;height:100vh;height:100dvh;background:#03080c;color:var(--c);font-family:ui-monospace,Menlo,monospace;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background-image:linear-gradient(var(--dim) 1px,transparent 1px),linear-gradient(90deg,var(--dim) 1px,transparent 1px);background-size:48px 48px;background-blend-mode:soft-light}
+body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.32);--v:3}
+body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.32);--v:1.4}
+body[data-s=speaking]{--c:#19e3f0;--v:2}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
+header h1{font-size:18px;letter-spacing:.35em}
+header small{display:block;font-size:9px;letter-spacing:.15em;opacity:.55;margin-top:3px}
+.st{text-align:center;font-size:10px;letter-spacing:.2em}
+.st b{display:block;font-size:14px;margin-top:3px}
+main{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:16px;padding:16px;min-height:0}
+.panel{position:relative;border:1px solid var(--dim);padding:14px;background:rgba(3,8,12,.8);display:flex;flex-direction:column;min-height:0;gap:10px}
+.panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--c)}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.panel h2{font-size:10px;letter-spacing:.25em;opacity:.7;font-weight:400}
+.btn{background:transparent;color:var(--c);border:1px solid var(--c);padding:12px;font:inherit;font-size:12px;letter-spacing:.15em;cursor:pointer}
+.btn:active{background:var(--dim)}
+.row{display:flex;justify-content:space-between;font-size:12px}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:0}
+.orb{position:relative;width:min(58vmin,430px);aspect-ratio:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ring{position:absolute;border-radius:50%}
+.r1{inset:0;border:1px dashed var(--dim);animation:spin 50s linear infinite}
+.r2{inset:8%;border:2px solid transparent;border-top-color:var(--c);border-bottom-color:var(--c);animation:spin calc(var(--v)*1s) linear infinite reverse}
+.r3{inset:17%;border:1px solid var(--dim);background:conic-gradient(from 0deg,transparent 0 78%,var(--dim) 100%);animation:spin calc(var(--v)*.6s) linear infinite}
+.r4{inset:29%;border:1px solid var(--c);box-shadow:0 0 28px var(--dim),inset 0 0 28px var(--dim);animation:pulse 3s ease-in-out infinite}
+.core{position:relative;z-index:2;width:30%;aspect-ratio:1;border-radius:50%;border:2px solid var(--c);display:grid;place-items:center;text-align:center;font-size:clamp(9px,1.7vmin,13px);letter-spacing:.14em;line-height:1.5;background:radial-gradient(circle,var(--dim),transparent 72%)}
+.wave{display:flex;gap:3px;align-items:center;height:34px}
+.wave span{width:3px;height:30px;background:var(--c);transform:scaleY(.15);animation:wv 1s ease-in-out infinite;animation-play-state:paused}
+body[data-s=listening] .wave span,body[data-s=speaking] .wave span,body[data-s=thinking] .wave span{animation-play-state:running}
+#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.5}
+#log .tu{opacity:.65}
+#log .tu::before{content:"> "}
+#log .sys{color:#ffb62e}
+footer{display:flex;gap:8px;padding:10px 16px 14px}
+footer input{flex:1;background:rgba(3,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
+footer input:focus{border-color:var(--c)}
+#boot{position:fixed;inset:0;background:#03080c;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;font-size:12px;letter-spacing:.2em;transition:opacity .8s}
+#boot .bar{width:min(70vw,360px);height:4px;background:var(--dim)}
+#boot .bar i{display:block;height:100%;width:0;background:var(--c);transition:width 2.2s ease-out}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.04);opacity:.7}}
+@keyframes wv{50%{transform:scaleY(1)}}
+@media(max-width:820px){
+  main{grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:10px;padding:10px}
+  #left{display:none}
+  .orb{width:min(62vw,300px)}
+  header small{display:none}
+}
+</style>
+</head>
+<body data-s="idle">
+<div id="boot"><div>INIZIALIZZAZIONE SISTEMA...</div><div class="bar"><i id="bi"></i></div></div>
+
+<header>
+  <div><h1>JARVIS</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div>
+  <div class="st">STATO<b id="stato">IN ATTESA</b></div>
+  <div class="st">ORA<b id="ora">--:--:--</b></div>
+</header>
+
+<main>
+  <section class="panel" id="left">
+    <h2>SISTEMA //</h2>
+    <div class="row"><span>COLLEGAMENTO</span><span id="link">NON CONFIGURATO</span></div>
+    <button class="btn" id="bRes">RESOCONTO EMAIL</button>
+    <button class="btn" id="bCfg">IMPOSTAZIONI</button>
+    <button class="btn" id="bStop">ZITTISCI</button>
+  </section>
+
+  <section class="center">
+    <div class="orb" id="orb">
+      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
+      <div class="core" id="core">TOCCA<br>PER PARLARE</div>
+    </div>
+    <div class="wave" id="wave"></div>
+  </section>
+
+  <section class="panel">
+    <h2>CONVERSAZIONE //</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<footer>
+  <input id="txt" placeholder="Oppure scrivi qui..." autocomplete="off">
+  <button class="btn" id="bSend">INVIA</button>
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const get = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const put = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+let cfg = { url: get('j_url'), code: get('j_code') };
+
+const NOMI = { idle: 'IN ATTESA', listening: 'TI ASCOLTO', thinking: 'ELABORO', speaking: 'PARLO' };
+const CORE = { idle: 'TOCCA<br>PER PARLARE', listening: 'ASCOLTO...', thinking: 'ELABORO...', speaking: 'JARVIS<br>PARLA' };
+function setState(s) {
+  document.body.dataset.s = s;
+  $('#stato').textContent = NOMI[s];
+  $('#core').innerHTML = CORE[s];
+}
+function log(chi, testo) {
+  const d = document.createElement('div');
+  d.className = chi;
+  d.textContent = testo;
+  $('#log').appendChild(d);
+  $('#log').scrollTop = $('#log').scrollHeight;
+}
+function aggiornaLink() { $('#link').textContent = (cfg.url && cfg.code) ? 'ONLINE' : 'NON CONFIGURATO'; }
+
+for (let i = 0; i < 28; i++) {
+  const s = document.createElement('span');
+  s.style.animationDelay = (Math.random() * -1).toFixed(2) + 's';
+  s.style.animationDuration = (0.5 + Math.random() * 0.8).toFixed(2) + 's';
+  $('#wave').appendChild(s);
+}
+setInterval(() => { $('#ora').textContent = new Date().toLocaleTimeString('it-IT'); }, 1000);
+
+function configura() {
+  const u = prompt("Incolla l'URL dell'app web (finisce con /exec):", cfg.url);
+  if (u === null) return;
+  const c = prompt('Scrivi il codice segreto:', cfg.code);
+  if (c === null) return;
+  cfg.url = u.trim(); cfg.code = c.trim();
+  put('j_url', cfg.url); put('j_code', cfg.code);
+  aggiornaLink();
+}
+
+function parla(t) {
+  const pulito = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
+  const u = new SpeechSynthesisUtterance(pulito);
+  u.lang = 'it-IT';
+  const it = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('it'));
+  u.voice = it.find(v => /luca/i.test(v.name)) || it[0] || null;
+  u.rate = 1.02; u.pitch = 0.9;
+  u.onstart = () => setState('speaking');
+  u.onend = u.onerror = () => setState('idle');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+async function chiedi(q) {
+  if (!cfg.url || !cfg.code) { log('sys', 'Prima premi IMPOSTAZIONI e inserisci URL e codice segreto.'); setState('idle'); return; }
+  log('tu', q);
+  setState('thinking');
+  try {
+    const r = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ codice: cfg.code, domanda: q })
+    });
+    const j = await r.json();
+    log('jarvis', j.risposta);
+    parla(j.risposta);
+  } catch (e) {
+    log('sys', 'Errore di connessione: ' + e.message);
+    setState('idle');
+  }
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function ascolta() {
+  const sblocco = new SpeechSynthesisUtterance(' ');
+  sblocco.volume = 0;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(sblocco);
+  if (!SR) { log('sys', 'Qui il microfono non è supportato: scrivi nel campo in basso.'); return; }
+  if (rec) { rec.stop(); return; }
+  rec = new SR();
+  rec.lang = 'it-IT';
+  rec.interimResults = false;
+  let testo = '';
+  rec.onstart = () => setState('listening');
+  rec.onresult = e => { testo = e.results[0][0].transcript; };
+  rec.onerror = e => { log('sys', 'Microfono: ' + e.error); };
+  rec.onend = () => { rec = null; if (testo) chiedi(testo); else setState('idle'); };
+  rec.start();
+}
+
+function invia() {
+  const v = $('#txt').value.trim();
+  if (!v) return;
+  $('#txt').value = '';
+  const sblocco = new SpeechSynthesisUtterance(' ');
+  sblocco.volume = 0;
+  speechSynthesis.speak(sblocco);
+  chiedi(v);
+}
+
+$('#orb').onclick = ascolta;
+$('#bSend').onclick = invia;
+$('#txt').addEventListener('keydown', e => { if (e.key === 'Enter') invia(); });
+$('#bCfg').onclick = configura;
+$('#bStop').onclick = () => { speechSynthesis.cancel(); setState('idle'); };
+$('#bRes').onclick = () => {
+  const sblocco = new SpeechSynthesisUtterance(' ');
+  sblocco.volume = 0;
+  speechSynthesis.speak(sblocco);
+  chiedi('Fammi un resoconto delle email importanti, in ordine di priorità.');
+};
+
+aggiornaLink();
+log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso.');
+setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
+setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); }, 2500);
+if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
+</script>
+</body>
+</html>
