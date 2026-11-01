@@ -75,6 +75,7 @@ footer input:focus{border-color:var(--c)}
     <div class="row"><span>COLLEGAMENTO</span><span id="link">NON CONFIGURATO</span></div>
     <button class="btn" id="bRes">RESOCONTO EMAIL</button>
     <button class="btn" id="bCfg">IMPOSTAZIONI</button>
+    <button class="btn" id="bVoce">CAMBIA VOCE</button>
     <button class="btn" id="bStop">ZITTISCI</button>
   </section>
 
@@ -137,13 +138,32 @@ function configura() {
   aggiornaLink();
 }
 
+function voci() {
+  return speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('it'));
+}
+function vocePreferita() {
+  const it = voci();
+  const salvata = get('j_voce');
+  return it.find(v => v.name === salvata)
+    || it.find(v => /premium|enhanced|avanzat|migliorat/i.test(v.name))
+    || it.find(v => /luca/i.test(v.name))
+    || it[0] || null;
+}
+function cambiaVoce() {
+  const it = voci();
+  if (!it.length) { log('sys', 'Nessuna voce italiana trovata su questo dispositivo.'); return; }
+  const prossima = it[(it.indexOf(vocePreferita()) + 1) % it.length];
+  put('j_voce', prossima.name);
+  log('sys', 'Voce: ' + prossima.name);
+  parla('Salve, sono Jarvis. Questa è la mia nuova voce.');
+}
+
 function parla(t) {
   const pulito = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
   const u = new SpeechSynthesisUtterance(pulito);
   u.lang = 'it-IT';
-  const it = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith('it'));
-  u.voice = it.find(v => /luca/i.test(v.name)) || it[0] || null;
-  u.rate = 1.02; u.pitch = 0.9;
+  u.voice = vocePreferita();
+  u.rate = 1; u.pitch = 1;
   u.onstart = () => setState('speaking');
   u.onend = u.onerror = () => setState('idle');
   speechSynthesis.cancel();
@@ -203,6 +223,12 @@ $('#orb').onclick = ascolta;
 $('#bSend').onclick = invia;
 $('#txt').addEventListener('keydown', e => { if (e.key === 'Enter') invia(); });
 $('#bCfg').onclick = configura;
+$('#bVoce').onclick = () => {
+  const sblocco = new SpeechSynthesisUtterance(' ');
+  sblocco.volume = 0;
+  speechSynthesis.speak(sblocco);
+  cambiaVoce();
+};
 $('#bStop').onclick = () => { speechSynthesis.cancel(); setState('idle'); };
 $('#bRes').onclick = () => {
   const sblocco = new SpeechSynthesisUtterance(' ');
