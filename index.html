@@ -118,6 +118,7 @@ footer input:focus{border-color:var(--c)}
         <div><div class="mt" id="mTemp">--&deg;C</div><div class="mc" id="mCond">In attesa dati...</div></div>
       </div>
       <div class="row"><span>MIN <b id="mMin">--&deg;</b></span><span>MAX <b id="mMax">--&deg;</b></span></div>
+      <div class="row"><span>DOMANI</span><b id="mDomani" style="text-align:right">--</b></div>
       <button class="btn" id="bCitta">CAMBIA CITT&Agrave;</button>
     </section>
   </div>
@@ -257,6 +258,7 @@ const WMO = {
   85: ['Rovesci di neve', '❄'], 86: ['Forti rovesci di neve', '❄'],
   95: ['Temporale', '⚡'], 96: ['Temporale con grandine', '⚡'], 99: ['Forte temporale con grandine', '⚡']
 };
+let meteoTesto = '';
 function trovaPosizione() {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
@@ -282,14 +284,26 @@ async function caricaMeteo() {
   $('#citta').textContent = (pos.nome || 'LA TUA POSIZIONE').toUpperCase();
   try {
     const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos.lat + '&longitude=' + pos.lon +
-      '&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1');
+      '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');
     const j = await r.json();
     const w = WMO[j.current.weather_code] || ['Condizioni non disponibili', '☁'];
     $('#mIcona').textContent = w[1];
     $('#mCond').textContent = w[0];
     $('#mTemp').textContent = Math.round(j.current.temperature_2m) + '°C';
-    $('#mMin').textContent = Math.round(j.daily.temperature_2m_min[0]) + '°';
-    $('#mMax').textContent = Math.round(j.daily.temperature_2m_max[0]) + '°';
+    const d = j.daily;
+    $('#mMin').textContent = Math.round(d.temperature_2m_min[0]) + '°';
+    $('#mMax').textContent = Math.round(d.temperature_2m_max[0]) + '°';
+    const dom = WMO[d.weather_code[1]] || ['--', '☁'];
+    $('#mDomani').textContent = dom[0] + ' ' + Math.round(d.temperature_2m_min[1]) + '°/' + Math.round(d.temperature_2m_max[1]) + '°';
+    const giorni = d.time.map((dt, i) => {
+      const nome = i === 0 ? 'Oggi' : i === 1 ? 'Domani' : new Date(dt + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+      const cond = (WMO[d.weather_code[i]] || ['condizioni non disponibili'])[0];
+      const pioggia = d.precipitation_probability_max ? d.precipitation_probability_max[i] : '?';
+      return nome + ': ' + cond + ', minima ' + Math.round(d.temperature_2m_min[i]) + ' gradi, massima ' +
+        Math.round(d.temperature_2m_max[i]) + ' gradi, probabilità di pioggia ' + pioggia + '%';
+    });
+    meteoTesto = 'Previsioni meteo reali per ' + (pos.nome || "la posizione dell'utente") + ' (fonte Open-Meteo). Adesso: ' +
+      Math.round(j.current.temperature_2m) + ' gradi, ' + w[0] + '. ' + giorni.join('. ') + '.';
   } catch (e) {
     $('#mCond').textContent = 'Meteo non raggiungibile';
   }
@@ -348,18 +362,20 @@ function voci() {
 }
 function vocePreferita() {
   const it = voci();
-  const salvata = get('j_voce');
+  const salvata = get('j_voce2');
   return it.find(v => v.name === salvata)
     || it.find(v => /premium|enhanced|avanzat|migliorat/i.test(v.name))
     || it.find(v => /luca/i.test(v.name))
     || it[0] || null;
 }
 function cambiaVoce() {
-  const opzioni = ['GEMINI', ...voci().map(v => v.name)];
-  const attuale = get('j_voce') || 'GEMINI';
-  const prossima = opzioni[(opzioni.indexOf(attuale) + 1) % opzioni.length];
-  put('j_voce', prossima);
-  log('sys', 'Voce: ' + (prossima === 'GEMINI' ? 'Gemini (naturale)' : prossima));
+  const it = voci();
+  const opzioni = it.map(v => v.name).concat(['GEMINI']);
+  const attuale = vocePreferita();
+  const corrente = get('j_voce2') || (attuale ? attuale.name : 'GEMINI');
+  const prossima = opzioni[(opzioni.indexOf(corrente) + 1) % opzioni.length];
+  put('j_voce2', prossima);
+  log('sys', 'Voce: ' + (prossima === 'GEMINI' ? 'Gemini (naturale, con quota limitata)' : prossima));
   parla('Salve, sono Jarvis. Questa è la mia nuova voce.');
 }
 const player = new Audio();
@@ -374,12 +390,18 @@ function sbloccaAudio() {
   speechSynthesis.speak(u);
 }
 function parla(t) {
-  const scelta = get('j_voce');
-  if (!scelta || scelta === 'GEMINI') parlaGemini(t); else parlaApple(t);
+  if (get('j_voce2') === 'GEMINI') parlaGemini(t); else parlaApple(t);
+}
+function tagliaVoce(t, max) {
+  if (t.length <= max) return t;
+  const taglio = t.slice(0, max);
+  const p = Math.max(taglio.lastIndexOf('. '), taglio.lastIndexOf('! '), taglio.lastIndexOf('? '));
+  return p > 200 ? taglio.slice(0, p + 1) : taglio;
 }
 async function parlaGemini(t) {
+  const t0 = Date.now();
   try {
-    const testo = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
+    const testo = tagliaVoce(t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' '), 700);
     const j = await chiama({ azione: 'voce', testo: testo });
     if (!j.audio) throw new Error((j.errore || 'nessun audio ricevuto').slice(0, 200));
     player.onplay = () => setState('speaking');
@@ -387,7 +409,11 @@ async function parlaGemini(t) {
     player.src = 'data:audio/wav;base64,' + j.audio;
     await player.play();
   } catch (e) {
-    log('sys', 'Voce Gemini non disponibile (' + e.message + '): uso la voce di Apple.');
+    const m = String(e.message);
+    let motivo = m;
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
+    else if (/load failed/i.test(m)) motivo = 'nessuna risposta dopo ' + Math.round((Date.now() - t0) / 1000) + ' secondi';
+    log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple.');
     parlaApple(t);
   }
 }
@@ -404,12 +430,23 @@ function parlaApple(t) {
 }
 
 /* ---------- DOMANDE ---------- */
+const RE_METEO = /meteo|che tempo|piove|piogg|sole|soleggiat|nuvol|temperatur|caldo|freddo|neve|nevic|vento|ombrello|previsioni|temporale|gradi/i;
 async function chiedi(q) {
   if (!cfg.url || !cfg.code) { log('sys', 'Prima premi IMPOSTAZIONI e inserisci URL e codice segreto.'); setState('idle'); return; }
   log('tu', q);
   setState('thinking');
+  const t0 = Date.now();
+  const iv = setInterval(() => {
+    if (document.body.dataset.s === 'thinking') $('#core').innerHTML = 'ELABORO...<br>' + Math.round((Date.now() - t0) / 1000) + 's';
+  }, 1000);
   try {
-    const j = await chiama({ domanda: q, storia: storia.slice(-8) });
+    let inviata = q;
+    if (RE_METEO.test(q)) {
+      if (!meteoTesto) await caricaMeteo();
+      if (meteoTesto) { inviata = q + '\n\n[Dati meteo aggiornati, usali per rispondere: ' + meteoTesto + ']'; log('sys', '☁ Previsioni allegate alla domanda'); }
+      else log('sys', 'Dati meteo non disponibili: controlla il riquadro METEO o tocca CAMBIA CITTÀ.');
+    }
+    const j = await chiama({ domanda: inviata, storia: storia.slice(-8) });
     storia.push({ r: 'u', t: q }, { r: 'j', t: j.risposta });
     if (storia.length > 16) storia.splice(0, storia.length - 16);
     log('jarvis', j.risposta);
@@ -420,6 +457,8 @@ async function chiedi(q) {
   } catch (e) {
     log('sys', 'Errore di connessione: ' + e.message);
     setState('idle');
+  } finally {
+    clearInterval(iv);
   }
 }
 
@@ -461,7 +500,7 @@ $('#bRes').onclick = () => {
 aggiornaLink();
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso.');
+log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v8)');
 setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
 setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); caricaStato(); }, 2500);
 if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
