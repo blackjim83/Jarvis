@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#03080c">
+<title>Jarvis</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;height:100vh;height:100dvh;background:#03080c;color:var(--c);font-family:ui-monospace,Menlo,monospace;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background-image:linear-gradient(var(--dim) 1px,transparent 1px),linear-gradient(90deg,var(--dim) 1px,transparent 1px);background-size:48px 48px;background-blend-mode:soft-light}
+body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.32);--v:3}
+body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.32);--v:1.4}
+body[data-s=speaking]{--c:#19e3f0;--v:2}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
+header h1{font-size:18px;letter-spacing:.35em}
+header small{display:block;font-size:9px;letter-spacing:.15em;opacity:.55;margin-top:3px}
+.st{text-align:center;font-size:10px;letter-spacing:.2em}
+.st b{display:block;font-size:14px;margin-top:3px}
+main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-height:0}
+.panel{position:relative;border:1px solid var(--dim);padding:14px;background:rgba(3,8,12,.8);display:flex;flex-direction:column;min-height:0;gap:10px}
+.panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--c)}
+.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
+.panel h2{font-size:10px;letter-spacing:.25em;opacity:.7;font-weight:400}
+#left{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
+#left>*{flex:none}
+.btn{background:transparent;color:var(--c);border:1px solid var(--c);padding:11px 8px;font:inherit;font-size:11px;letter-spacing:.1em;cursor:pointer}
+.btn:active{background:var(--dim)}
+.row{display:flex;justify-content:space-between;font-size:12px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mem{display:flex;flex-direction:column;gap:10px}
+.mem canvas{width:100%;height:105px;display:block;border:1px solid var(--dim);background:rgba(25,227,240,.03)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stats div{border:1px solid var(--dim);padding:6px 2px;text-align:center}
+.stats b{display:block;font-size:16px;margin-bottom:2px}
+.stats span{font-size:7.5px;letter-spacing:.05em;opacity:.7}
+#ult{font-size:11px;line-height:1.5;opacity:.85;max-height:34px;overflow:hidden}
+.meteo-main{display:flex;align-items:center;gap:14px}
+.mi{font-size:42px;line-height:1}
+.mt{font-size:28px;letter-spacing:.05em}
+.mc{font-size:11px;opacity:.8;margin-top:2px}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:0}
+.orb{position:relative;width:min(54vmin,420px);aspect-ratio:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ring{position:absolute;border-radius:50%}
+.r1{inset:0;border:1px dashed var(--dim);animation:spin 50s linear infinite}
+.r2{inset:8%;border:2px solid transparent;border-top-color:var(--c);border-bottom-color:var(--c);animation:spin calc(var(--v)*1s) linear infinite reverse}
+.r3{inset:17%;border:1px solid var(--dim);background:conic-gradient(from 0deg,transparent 0 78%,var(--dim) 100%);animation:spin calc(var(--v)*.6s) linear infinite}
+.r4{inset:29%;border:1px solid var(--c);box-shadow:0 0 28px var(--dim),inset 0 0 28px var(--dim);animation:pulse 3s ease-in-out infinite}
+.core{position:relative;z-index:2;width:30%;aspect-ratio:1;border-radius:50%;border:2px solid var(--c);display:grid;place-items:center;text-align:center;font-size:clamp(9px,1.7vmin,13px);letter-spacing:.14em;line-height:1.5;background:radial-gradient(circle,var(--dim),transparent 72%)}
+.wave{display:flex;gap:3px;align-items:center;height:34px}
+.wave span{width:3px;height:30px;background:var(--c);transform:scaleY(.15);animation:wv 1s ease-in-out infinite;animation-play-state:paused}
+body[data-s=listening] .wave span,body[data-s=speaking] .wave span,body[data-s=thinking] .wave span{animation-play-state:running}
+#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.5}
+#log .tu{opacity:.65}
+#log .tu::before{content:"> "}
+#log .sys{color:#ffb62e}
+#log .mem{color:#4dffb0}
+footer{display:flex;gap:8px;padding:10px 16px 14px}
+footer input{flex:1;background:rgba(3,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
+footer input:focus{border-color:var(--c)}
+#boot{position:fixed;inset:0;background:#03080c;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;font-size:12px;letter-spacing:.2em;transition:opacity .8s}
+#boot .bar{width:min(70vw,360px);height:4px;background:var(--dim)}
+#boot .bar i{display:block;height:100%;width:0;background:var(--c);transition:width 2.2s ease-out}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{50%{transform:scale(1.04);opacity:.7}}
+@keyframes wv{50%{transform:scaleY(1)}}
+@media(max-width:820px){
+  main{grid-template-columns:1fr;overflow-y:auto;gap:12px;padding:10px;align-content:start}
+  .center{order:1}
+  #left{order:2;overflow:visible}
+  .logp{order:3;min-height:260px}
+  .orb{width:min(60vw,270px)}
+  .mem canvas{height:120px}
+  header small{display:none}
+}
+</style>
+</head>
+<body data-s="idle">
+<div id="boot"><div>INIZIALIZZAZIONE SISTEMA...</div><div class="bar"><i id="bi"></i></div></div>
+
+<header>
+  <div><h1>JARVIS</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div>
+  <div class="st">STATO<b id="stato">IN ATTESA</b></div>
+  <div class="st">ORA<b id="ora">--:--:--</b></div>
+</header>
+
+<main>
+  <div id="left">
+    <section class="panel">
+      <h2>SISTEMA //</h2>
+      <div class="row"><span>COLLEGAMENTO</span><span id="link">NON CONFIGURATO</span></div>
+      <div class="tools">
+        <button class="btn" id="bRes">RESOCONTO</button>
+        <button class="btn" id="bVoce">CAMBIA VOCE</button>
+        <button class="btn" id="bCfg">IMPOSTAZIONI</button>
+        <button class="btn" id="bStop">ZITTISCI</button>
+      </div>
+      <div class="mem">
+        <h2>MEMORIA // RETE NEURALE</h2>
+        <canvas id="rete"></canvas>
+        <div class="stats">
+          <div><b id="nR">0</b><span>NEURONI</span></div>
+          <div><b id="nS">0</b><span>SINAPSI</span></div>
+          <div><b id="nC">0</b><span>CHAT</span></div>
+          <div><b id="nG">1</b><span>GIORNI</span></div>
+        </div>
+        <div id="ult"></div>
+      </div>
+    </section>
+
+    <section class="panel" id="meteo">
+      <h2>METEO // <span id="citta">--</span></h2>
+      <div class="meteo-main">
+        <div class="mi" id="mIcona">&#9729;</div>
+        <div><div class="mt" id="mTemp">--&deg;C</div><div class="mc" id="mCond">In attesa dati...</div></div>
+      </div>
+      <div class="row"><span>MIN <b id="mMin">--&deg;</b></span><span>MAX <b id="mMax">--&deg;</b></span></div>
+      <div class="row"><span>DOMANI</span><b id="mDomani" style="text-align:right">--</b></div>
+      <button class="btn" id="bCitta">CAMBIA CITT&Agrave;</button>
+    </section>
+  </div>
+
+  <section class="center">
+    <div class="orb" id="orb">
+      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
+      <div class="core" id="core">TOCCA<br>PER PARLARE</div>
+    </div>
+    <div class="wave" id="wave"></div>
+  </section>
+
+  <section class="panel logp">
+    <h2>CONVERSAZIONE //</h2>
+    <div id="log"></div>
+  </section>
+</main>
+
+<footer>
+  <input id="txt" placeholder="Oppure scrivi qui..." autocomplete="off">
+  <button class="btn" id="bSend">INVIA</button>
+</footer>
+
+<script>
+const $ = s => document.querySelector(s);
+const get = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+const put = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+let cfg = { url: get('j_url'), code: get('j_code') };
+let storia = [];
+let recenti = [];
+
+const NOMI = { idle: 'IN ATTESA', listening: 'TI ASCOLTO', thinking: 'ELABORO', speaking: 'PARLO' };
+const CORE = { idle: 'TOCCA<br>PER PARLARE', listening: 'ASCOLTO...', thinking: 'ELABORO...', speaking: 'JARVIS<br>PARLA' };
+function setState(s) {
+  document.body.dataset.s = s;
+  $('#stato').textContent = NOMI[s];
+  $('#core').innerHTML = CORE[s];
+}
+function log(chi, testo) {
+  const d = document.createElement('div');
+  d.className = chi;
+  d.textContent = testo;
+  $('#log').appendChild(d);
+  $('#log').scrollTop = $('#log').scrollHeight;
+  d.scrollIntoView({ block: 'nearest' });
+}
+function aggiornaLink() { $('#link').textContent = (cfg.url && cfg.code) ? 'ONLINE' : 'NON CONFIGURATO'; }
+
+for (let i = 0; i < 28; i++) {
+  const s = document.createElement('span');
+  s.style.animationDelay = (Math.random() * -1).toFixed(2) + 's';
+  s.style.animationDuration = (0.5 + Math.random() * 0.8).toFixed(2) + 's';
+  $('#wave').appendChild(s);
+}
+setInterval(() => { $('#ora').textContent = new Date().toLocaleTimeString('it-IT'); }, 1000);
+
+/* ---------- RETE NEURALE ---------- */
+const cv = $('#rete'), cx = cv.getContext('2d');
+let nodi = [], archi = [];
+function rnd(i) {
+  let t = (i + 1) * 0x6D2B79F5;
+  t = Math.imul(t ^ t >>> 15, t | 1);
+  t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+function costruisci(n) {
+  nodi = []; archi = [];
+  const N = Math.min(n, 150) + 1;
+  for (let i = 0; i < N; i++) {
+    if (i === 0) { nodi.push({ x: 0.5, y: 0.5, f: 0, nuovo: 0 }); continue; }
+    const a = rnd(i * 2) * Math.PI * 2, r = Math.sqrt(rnd(i * 2 + 1)) * 0.9;
+    nodi.push({ x: 0.5 + Math.cos(a) * r * 0.46, y: 0.5 + Math.sin(a) * r * 0.44, f: rnd(i * 3) * 6.28, nuovo: 0 });
+  }
+  for (let i = 1; i < N; i++) {
+    const d = [];
+    for (let j = 0; j < i; j++) d.push([j, (nodi[i].x - nodi[j].x) ** 2 + (nodi[i].y - nodi[j].y) ** 2]);
+    d.sort((p, q) => p[1] - q[1]);
+    d.slice(0, 2).forEach(x => archi.push([i, x[0]]));
+  }
+}
+function disegna(t) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w && cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx.clearRect(0, 0, w, h);
+  const col = getComputedStyle(document.body).getPropertyValue('--c').trim() || '#19e3f0';
+  cx.strokeStyle = col; cx.fillStyle = col; cx.lineWidth = 1;
+  const P = n => [(n.x + Math.sin(t / 2500 + n.f) * 0.012) * w, (n.y + Math.cos(t / 2900 + n.f) * 0.012) * h];
+  cx.globalAlpha = 0.28;
+  archi.forEach(([a, b]) => {
+    const A = P(nodi[a]), B = P(nodi[b]);
+    cx.beginPath(); cx.moveTo(A[0], A[1]); cx.lineTo(B[0], B[1]); cx.stroke();
+  });
+  nodi.forEach((n, i) => {
+    const p = P(n);
+    const pulse = 0.5 + 0.5 * Math.sin(t / 700 + n.f);
+    n.nuovo = Math.max(0, n.nuovo - 0.004);
+    cx.globalAlpha = 0.5 + 0.4 * pulse;
+    cx.beginPath();
+    cx.arc(p[0], p[1], (i === 0 ? 4 : 2.2) + n.nuovo * 7, 0, 6.283);
+    cx.fill();
+  });
+  cx.globalAlpha = 1;
+  requestAnimationFrame(disegna);
+}
+function aggiornaStats(st, nuovi) {
+  if (!st) return;
+  $('#nR').textContent = st.ricordi;
+  $('#nC').textContent = st.conversazioni;
+  $('#nG').textContent = st.giorni;
+  costruisci(st.ricordi);
+  $('#nS').textContent = archi.length;
+  (nuovi || []).forEach((_, k) => { const n = nodi[nodi.length - 1 - k]; if (n && n !== nodi[0]) n.nuovo = 1; });
+}
+function mostraRecenti() {
+  $('#ult').innerHTML = '';
+  recenti.slice(-3).forEach(r => {
+    const d = document.createElement('div');
+    d.textContent = '◆ ' + r;
+    $('#ult').appendChild(d);
+  });
+}
+costruisci(0);
+requestAnimationFrame(disegna);
+
+/* ---------- METEO ---------- */
+const WMO = {
+  0: ['Sereno', '☀'], 1: ['Prevalentemente sereno', '☀'], 2: ['Parzialmente nuvoloso', '☁'], 3: ['Coperto', '☁'],
+  45: ['Nebbia', '≋'], 48: ['Nebbia con brina', '≋'],
+  51: ['Pioggerella leggera', '☂'], 53: ['Pioggerella', '☂'], 55: ['Pioggerella intensa', '☂'],
+  56: ['Pioggerella gelata', '☂'], 57: ['Pioggerella gelata intensa', '☂'],
+  61: ['Pioggia leggera', '☂'], 63: ['Pioggia', '☂'], 65: ['Pioggia forte', '☂'],
+  66: ['Pioggia gelata', '☂'], 67: ['Pioggia gelata forte', '☂'],
+  71: ['Neve leggera', '❄'], 73: ['Neve', '❄'], 75: ['Neve forte', '❄'], 77: ['Granelli di neve', '❄'],
+  80: ['Rovesci leggeri', '☂'], 81: ['Rovesci', '☂'], 82: ['Rovesci violenti', '☂'],
+  85: ['Rovesci di neve', '❄'], 86: ['Forti rovesci di neve', '❄'],
+  95: ['Temporale', '⚡'], 96: ['Temporale con grandine', '⚡'], 99: ['Forte temporale con grandine', '⚡']
+};
+let meteoTesto = '';
+function trovaPosizione() {
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(async p => {
+      const pos = { lat: p.coords.latitude.toFixed(3), lon: p.coords.longitude.toFixed(3), nome: '', auto: true };
+      try {
+        const r = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + pos.lat + '&longitude=' + pos.lon + '&localityLanguage=it');
+        const j = await r.json();
+        pos.nome = j.city || j.locality || '';
+      } catch (e) {}
+      res(pos);
+    }, () => res(null), { timeout: 10000, maximumAge: 600000 });
+  });
+}
+async function caricaMeteo() {
+  let pos = null;
+  try { pos = JSON.parse(get('j_pos') || 'null'); } catch (e) {}
+  if (!pos || pos.auto) {
+    const nuova = await trovaPosizione();
+    if (nuova) { pos = nuova; put('j_pos', JSON.stringify(pos)); }
+  }
+  if (!pos) { $('#mCond').textContent = 'Posizione non disponibile: tocca CAMBIA CITTÀ.'; return; }
+  $('#citta').textContent = (pos.nome || 'LA TUA POSIZIONE').toUpperCase();
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos.lat + '&longitude=' + pos.lon +
+      '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');
+    const j = await r.json();
+    const w = WMO[j.current.weather_code] || ['Condizioni non disponibili', '☁'];
+    $('#mIcona').textContent = w[1];
+    $('#mCond').textContent = w[0];
+    $('#mTemp').textContent = Math.round(j.current.temperature_2m) + '°C';
+    const d = j.daily;
+    $('#mMin').textContent = Math.round(d.temperature_2m_min[0]) + '°';
+    $('#mMax').textContent = Math.round(d.temperature_2m_max[0]) + '°';
+    const dom = WMO[d.weather_code[1]] || ['--', '☁'];
+    $('#mDomani').textContent = dom[0] + ' ' + Math.round(d.temperature_2m_min[1]) + '°/' + Math.round(d.temperature_2m_max[1]) + '°';
+    const giorni = d.time.map((dt, i) => {
+      const nome = i === 0 ? 'Oggi' : i === 1 ? 'Domani' : new Date(dt + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+      const cond = (WMO[d.weather_code[i]] || ['condizioni non disponibili'])[0];
+      const pioggia = d.precipitation_probability_max ? d.precipitation_probability_max[i] : '?';
+      return nome + ': ' + cond + ', minima ' + Math.round(d.temperature_2m_min[i]) + ' gradi, massima ' +
+        Math.round(d.temperature_2m_max[i]) + ' gradi, probabilità di pioggia ' + pioggia + '%';
+    });
+    meteoTesto = 'Previsioni meteo reali per ' + (pos.nome || "la posizione dell'utente") + ' (fonte Open-Meteo). Adesso: ' +
+      Math.round(j.current.temperature_2m) + ' gradi, ' + w[0] + '. ' + giorni.join('. ') + '.';
+  } catch (e) {
+    $('#mCond').textContent = 'Meteo non raggiungibile';
+  }
+}
+async function cambiaCitta() {
+  const c = prompt('Scrivi il nome della città (lascia vuoto per usare la posizione del dispositivo):', '');
+  if (c === null) return;
+  let pos = null;
+  if (c.trim()) {
+    try {
+      const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(c.trim()) + '&count=1&language=it&format=json');
+      const j = await r.json();
+      const x = j.results && j.results[0];
+      if (x) pos = { lat: x.latitude, lon: x.longitude, nome: x.name };
+    } catch (e) {}
+    if (!pos) { log('sys', 'Città non trovata: ' + c); return; }
+  } else {
+    pos = await trovaPosizione();
+    if (!pos) { log('sys', 'Posizione non disponibile: controlla il permesso di Safari.'); return; }
+  }
+  put('j_pos', JSON.stringify(pos));
+  caricaMeteo();
+}
+
+/* ---------- COLLEGAMENTO ---------- */
+async function chiama(corpo) {
+  const r = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(Object.assign({ codice: cfg.code }, corpo))
+  });
+  return r.json();
+}
+async function caricaStato() {
+  if (!cfg.url || !cfg.code) return;
+  try {
+    const j = await chiama({ azione: 'stato' });
+    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); }
+    else if (j.risposta) log('sys', j.risposta);
+  } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); }
+}
+function configura() {
+  const u = prompt("Incolla l'URL dell'app web (finisce con /exec):", cfg.url);
+  if (u === null) return;
+  const c = prompt('Scrivi il codice segreto:', cfg.code);
+  if (c === null) return;
+  cfg.url = u.trim(); cfg.code = c.trim();
+  put('j_url', cfg.url); put('j_code', cfg.code);
+  aggiornaLink();
+  caricaStato();
+}
+
+/* ---------- VOCE ---------- */
+function voci() {
+  return speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('it'));
+}
+function vocePreferita() {
+  const it = voci();
+  const salvata = get('j_voce2');
+  return it.find(v => v.name === salvata)
+    || it.find(v => /premium|enhanced|avanzat|migliorat/i.test(v.name))
+    || it.find(v => /luca/i.test(v.name))
+    || it[0] || null;
+}
+function cambiaVoce() {
+  const it = voci();
+  const opzioni = it.map(v => v.name).concat(['GEMINI']);
+  const attuale = vocePreferita();
+  const corrente = get('j_voce2') || (attuale ? attuale.name : 'GEMINI');
+  const prossima = opzioni[(opzioni.indexOf(corrente) + 1) % opzioni.length];
+  put('j_voce2', prossima);
+  log('sys', 'Voce: ' + (prossima === 'GEMINI' ? 'Gemini (naturale, con quota limitata)' : prossima));
+  parla('Salve, sono Jarvis. Questa è la mia nuova voce.');
+}
+const player = new Audio();
+function sbloccaAudio() {
+  try {
+    player.onplay = player.onended = player.onerror = null;
+    player.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    player.play().catch(() => {});
+  } catch (e) {}
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}
+function parla(t) {
+  if (get('j_voce2') === 'GEMINI') parlaGemini(t); else parlaApple(t);
+}
+function tagliaVoce(t, max) {
+  if (t.length <= max) return t;
+  const taglio = t.slice(0, max);
+  const p = Math.max(taglio.lastIndexOf('. '), taglio.lastIndexOf('! '), taglio.lastIndexOf('? '));
+  return p > 200 ? taglio.slice(0, p + 1) : taglio;
+}
+async function parlaGemini(t) {
+  const t0 = Date.now();
+  try {
+    const testo = tagliaVoce(t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' '), 700);
+    const j = await chiama({ azione: 'voce', testo: testo });
+    if (!j.audio) throw new Error((j.errore || 'nessun audio ricevuto').slice(0, 200));
+    player.onplay = () => setState('speaking');
+    player.onended = player.onerror = () => setState('idle');
+    player.src = 'data:audio/wav;base64,' + j.audio;
+    await player.play();
+  } catch (e) {
+    const m = String(e.message);
+    let motivo = m;
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
+    else if (/load failed/i.test(m)) motivo = 'nessuna risposta dopo ' + Math.round((Date.now() - t0) / 1000) + ' secondi';
+    log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple.');
+    parlaApple(t);
+  }
+}
+function parlaApple(t) {
+  const pulito = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
+  const u = new SpeechSynthesisUtterance(pulito);
+  u.lang = 'it-IT';
+  u.voice = vocePreferita();
+  u.rate = 1; u.pitch = 1;
+  u.onstart = () => setState('speaking');
+  u.onend = u.onerror = () => setState('idle');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+/* ---------- DOMANDE ---------- */
+const RE_METEO = /meteo|che tempo|piove|piogg|sole|soleggiat|nuvol|temperatur|caldo|freddo|neve|nevic|vento|ombrello|previsioni|temporale|gradi/i;
+async function chiedi(q) {
+  if (!cfg.url || !cfg.code) { log('sys', 'Prima premi IMPOSTAZIONI e inserisci URL e codice segreto.'); setState('idle'); return; }
+  log('tu', q);
+  setState('thinking');
+  const t0 = Date.now();
+  const iv = setInterval(() => {
+    if (document.body.dataset.s === 'thinking') $('#core').innerHTML = 'ELABORO...<br>' + Math.round((Date.now() - t0) / 1000) + 's';
+  }, 1000);
+  try {
+    let inviata = q;
+    if (RE_METEO.test(q)) {
+      if (!meteoTesto) await caricaMeteo();
+      if (meteoTesto) { inviata = q + '\n\n[Dati meteo aggiornati, usali per rispondere: ' + meteoTesto + ']'; log('sys', '☁ Previsioni allegate alla domanda'); }
+      else log('sys', 'Dati meteo non disponibili: controlla il riquadro METEO o tocca CAMBIA CITTÀ.');
+    }
+    const j = await chiama({ domanda: inviata, storia: storia.slice(-8) });
+    storia.push({ r: 'u', t: q }, { r: 'j', t: j.risposta });
+    if (storia.length > 16) storia.splice(0, storia.length - 16);
+    log('jarvis', j.risposta);
+    (j.nuovi || []).forEach(r => { log('mem', '◆ Ricordo appreso: ' + r); recenti.push(r); });
+    aggiornaStats(j.stats, j.nuovi);
+    mostraRecenti();
+    parla(j.risposta);
+  } catch (e) {
+    log('sys', 'Errore di connessione: ' + e.message);
+    setState('idle');
+  } finally {
+    clearInterval(iv);
+  }
+}
+
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function ascolta() {
+  if (!SR) { log('sys', 'Qui il microfono non è supportato: scrivi nel campo in basso.'); return; }
+  speechSynthesis.cancel();
+  if (rec) { rec.stop(); return; }
+  rec = new SR();
+  rec.lang = 'it-IT';
+  rec.interimResults = false;
+  let testo = '';
+  rec.onstart = () => setState('listening');
+  rec.onresult = e => { testo = e.results[0][0].transcript; };
+  rec.onerror = e => { log('sys', 'Microfono: ' + e.error); };
+  rec.onend = () => { rec = null; if (testo) chiedi(testo); else setState('idle'); };
+  rec.start();
+}
+function invia() {
+  const v = $('#txt').value.trim();
+  if (!v) return;
+  $('#txt').value = '';
+  chiedi(v);
+}
+
+$('#orb').onclick = () => { sbloccaAudio(); ascolta(); };
+$('#bSend').onclick = () => { sbloccaAudio(); invia(); };
+$('#txt').addEventListener('keydown', e => { if (e.key === 'Enter') { sbloccaAudio(); invia(); } });
+$('#bCfg').onclick = configura;
+$('#bCitta').onclick = cambiaCitta;
+$('#bVoce').onclick = () => { sbloccaAudio(); cambiaVoce(); };
+$('#bStop').onclick = () => { speechSynthesis.cancel(); player.pause(); setState('idle'); };
+$('#bRes').onclick = () => {
+  sbloccaAudio();
+  chiedi('Fammi un resoconto delle email importanti, in ordine di priorità.');
+};
+
+aggiornaLink();
+setInterval(caricaMeteo, 1800000);
+setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
+log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v8)');
+setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
+setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); caricaStato(); }, 2500);
+if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
+setTimeout(caricaMeteo, 4500);
+</script>
+</body>
+</html>
