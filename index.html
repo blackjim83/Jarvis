@@ -16,9 +16,11 @@ body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;--f:Orbitron,ui-monospace,Menl
 body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.32);--v:3}
 body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.32);--v:1.4}
 body[data-s=speaking]{--v:2}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
 header h1{font:700 20px var(--f);letter-spacing:.3em}
 header small{display:block;font-size:9px;letter-spacing:.15em;opacity:.55;margin-top:3px}
+header>:first-child{justify-self:start}
+header>.st:last-child{justify-self:end;text-align:right}
 .st{text-align:center;font-size:10px;letter-spacing:.2em}
 .st b{display:block;font:500 14px var(--f);margin-top:3px}
 main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-height:0}
@@ -90,7 +92,13 @@ footer input:focus{border-color:var(--c)}
   .logp{order:3;min-height:260px}
   .orb{width:min(60vw,270px)}
   header small{display:none}
-  header h1{font-size:15px}
+  header{padding:10px 12px;gap:6px}
+  header h1{font-size:11px;letter-spacing:.1em}
+  .st{letter-spacing:.08em}
+  .st b{font-size:11px}
+  main{grid-auto-rows:min-content}
+  .center,#left,.panel{min-height:auto}
+  .logp{min-height:260px}
 }
 @media(prefers-reduced-motion:reduce){.orbsvg g,.pl{animation:none}}
 </style>
@@ -474,16 +482,30 @@ async function parlaGemini(t) {
     parlaApple(t);
   }
 }
-function parlaApple(t) {
+function parlaApple(t, riprova) {
   const u = new SpeechSynthesisUtterance(pulisci(t));
+  const v = riprova ? null : vocePreferita();
   u.lang = 'it-IT';
-  u.voice = vocePreferita();
+  u.voice = v;
   u.rate = 1.05; u.pitch = 1;
-  u.onstart = () => setState('speaking');
-  u.onend = fineParlato;
-  u.onerror = () => setState('idle');
+  const nome = v ? v.name : 'di sistema';
+  let partita = false;
+  const guardia = setTimeout(() => {
+    if (partita) return;
+    speechSynthesis.cancel();
+    if (riprova) { log('sys', 'La voce ' + nome + ' non risponde. Controlla il volume e prova CAMBIA VOCE.'); setState('idle'); }
+    else { log('sys', 'La voce ' + nome + ' non parte: provo con quella di sistema.'); parlaApple(t, 1); }
+  }, 3000);
+  u.onstart = () => { partita = true; clearTimeout(guardia); setState('speaking'); };
+  u.onend = () => { clearTimeout(guardia); fineParlato(); };
+  u.onerror = e => {
+    if (e.error === 'interrupted' || e.error === 'canceled') return;
+    clearTimeout(guardia);
+    log('sys', 'Errore voce ' + nome + ': ' + e.error);
+    if (!riprova) parlaApple(t, 1); else setState('idle');
+  };
   speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+  setTimeout(() => speechSynthesis.speak(u), 120);
 }
 
 /* ---------- DOMANDE ---------- */
@@ -564,7 +586,7 @@ $('#bRes').onclick = () => {
 aggiornaLink();
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', saluto() + '. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v11)');
+log('jarvis', saluto() + '. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v13)');
 const ok = !!(cfg.url && cfg.code);
 const RIGHE = [
   ['INIZIALIZZAZIONE SISTEMI OK', 'Inizializzazione dei sistemi completata.'],
