@@ -825,6 +825,7 @@ async function parla(t, parti) {
       if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
       else if (/load failed/i.test(m)) motivo = 'nessuna risposta dal server';
       srv('voce', 'wa');
+      if ($('#boot')) bootRiga('VOCE: ' + motivo.slice(0, 60));
       log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple solo per questa risposta.');
       parlaApple(pezzi.slice(i).join(' '));
       return;
@@ -978,22 +979,22 @@ async function avvia() {
   barra(35);
   await Promise.race([Promise.all([caricaStato(), caricaMeteo()]), sleep(10000)]);
   barra(75);
+  const briefing = costruisciBriefing();
+  log('jarvis', briefing);
+  setState('thinking');
+  parla(briefing, 2);
   const nR = Number($('#nR').textContent) || 0, nS = $('#nS').textContent;
   bootRiga('MEMORIA: ' + nR + ' NEURONI · ' + nS + ' SINAPSI');
-  await sleep(350);
-  if (meteoOra) bootRiga('METEO: ' + meteoOra.citta.toUpperCase() + ' ' + meteoOra.temp + '°C');
-  await sleep(350);
+  await sleep(1200);
+  if (meteoOra) bootRiga('METEO: ' + meteoOra.citta.toUpperCase() + ' ' + meteoOra.temp + '°C, ' + meteoOra.cond.toUpperCase());
+  await sleep(1200);
   if (agendaDati) bootRiga('CALENDARIO: ' + eventiAgenda().oggi.length + ' EVENTI OGGI');
-  await sleep(350);
+  await sleep(1200);
   if (Object.keys(saluteDati).length) bootRiga('SALUTE: DATI RICEVUTI');
   barra(100);
-  await sleep(900);
+  await sleep(2500);
   $('#boot').style.opacity = 0;
   setTimeout(() => $('#boot').remove(), 1100);
-  const b = costruisciBriefing();
-  log('jarvis', b);
-  setState('thinking');
-  parla(b, 2);
 }
 $('#bTap').onclick = avvia;
 
@@ -1001,7 +1002,7 @@ aggiornaLink();
 srv('voce', 'ok');
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v13');
+log('sys', 'Jarvis pagina v13b');
 </script>
 </body>
 </html>
