@@ -186,6 +186,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) mi
     <section class="panel" id="saluteP">
       <h2>SALUTE <span>ULTIMI 7 GIORNI</span></h2>
       <div class="sal2" id="salute"><div class="empty">In attesa dei dati dal Comando Rapido sull'iPhone.</div></div>
+      <a class="btn sm" id="bSal" style="display:none;text-align:center;text-decoration:none">AGGIORNA DALL'IPHONE</a>
     </section>
   </div>
 
@@ -597,9 +598,12 @@ function renderSalute(s) {
     const riga = document.createElement('div');
     const r1 = document.createElement('div');
     r1.className = 'r1';
-    const a = document.createElement('span'); a.textContent = nome;
+    let gv = null;
+    for (let q = giorni.length - 1; q >= 0; q--) { if (s[giorni[q]][k] != null) { gv = giorni[q]; break; } }
+    const a = document.createElement('span');
+    a.textContent = nome + (gv && gv !== giorni[giorni.length - 1] ? ' · ' + gv.slice(8, 10) + '/' + gv.slice(5, 7) : '');
     const b = document.createElement('b');
-    b.textContent = ultimo[k] != null ? fmt(ultimo[k]) : '--';
+    b.textContent = gv ? fmt(s[gv][k]) : '--';
     r1.appendChild(a); r1.appendChild(b);
     const bars = document.createElement('div');
     bars.className = 'bars';
@@ -1004,9 +1008,15 @@ $('#bTap').onclick = avvia;
 
 aggiornaLink();
 srv('voce', 'ok');
+if (/iPhone/.test(navigator.userAgent)) {
+  const bs = $('#bSal');
+  bs.style.display = 'block';
+  bs.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Salute Jarvis') + '&x-success=' + encodeURIComponent(location.href.split('#')[0]);
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v13c');
+log('sys', 'Jarvis pagina v13d');
 </script>
 </body>
 </html>
