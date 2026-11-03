@@ -40,6 +40,14 @@ main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-
 .stats b{display:block;font-size:16px;margin-bottom:2px}
 .stats span{font-size:7.5px;letter-spacing:.05em;opacity:.7}
 #ult{font-size:11px;line-height:1.5;opacity:.85;max-height:34px;overflow:hidden}
+.sal{display:flex;flex-direction:column;gap:9px}
+.sal .r1{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em}
+.sal .r1 b{font-size:14px}
+.sal .bars{display:flex;gap:3px;align-items:flex-end;height:26px}
+.sal .bars i{flex:1;min-height:2px;opacity:.85}
+.sal .agg{font-size:9px;opacity:.6;letter-spacing:.08em}
+.agq{font-size:11px;line-height:1.55;max-height:150px;overflow-y:auto}
+.agq div{padding:2px 0;border-bottom:1px solid var(--dim)}
 .meteo-main{display:flex;align-items:center;gap:14px}
 .mi{font-size:42px;line-height:1}
 .mt{font-size:28px;letter-spacing:.05em}
@@ -122,6 +130,16 @@ footer input:focus{border-color:var(--c)}
       <div class="row"><span>MIN <b id="mMin">--&deg;</b></span><span>MAX <b id="mMax">--&deg;</b></span></div>
       <div class="row"><span>DOMANI</span><b id="mDomani" style="text-align:right">--</b></div>
       <button class="btn" id="bCitta">CAMBIA CITT&Agrave;</button>
+    </section>
+
+    <section class="panel" id="saluteP">
+      <h2>SALUTE // ULTIMI 7 GIORNI</h2>
+      <div class="sal" id="salute">In attesa dei dati dal Comando Rapido.</div>
+    </section>
+
+    <section class="panel" id="agendaP">
+      <h2>AGENDA // PROSSIMI GIORNI</h2>
+      <div class="agq" id="agenda">In attesa dei dati dal Comando Rapido.</div>
     </section>
   </div>
 
@@ -330,6 +348,87 @@ async function cambiaCitta() {
   caricaMeteo();
 }
 
+/* ---------- SALUTE ---------- */
+let saluteDati = {};
+const RIGHE_SALUTE = [
+  ['PASSI', 'passi', v => Number(v).toLocaleString('it-IT'), v => v >= 8000 ? '#4dffb0' : v >= 4000 ? '#ffb62e' : '#ff5a5a', 12000],
+  ['SONNO', 'sonno', v => String(v).replace('.', ',') + ' h', v => v >= 7 ? '#4dffb0' : v >= 6 ? '#ffb62e' : '#ff5a5a', 10],
+  ['FC A RIPOSO', 'fc', v => v + ' bpm', () => 'var(--c)', 100]
+];
+function renderSalute(s) {
+  if (!s) return;
+  saluteDati = s;
+  const el = $('#salute');
+  const giorni = Object.keys(s).sort().slice(-7);
+  el.innerHTML = '';
+  if (!giorni.length) { el.textContent = 'In attesa dei dati dal Comando Rapido.'; return; }
+  const ultimo = s[giorni[giorni.length - 1]];
+  RIGHE_SALUTE.forEach(([nome, k, fmt, col, max]) => {
+    const riga = document.createElement('div');
+    const r1 = document.createElement('div');
+    r1.className = 'r1';
+    const a = document.createElement('span'); a.textContent = nome;
+    const b = document.createElement('b');
+    b.textContent = ultimo[k] != null ? fmt(ultimo[k]) : '--';
+    r1.appendChild(a); r1.appendChild(b);
+    const bars = document.createElement('div');
+    bars.className = 'bars';
+    giorni.forEach(g => {
+      const v = s[g][k];
+      const i = document.createElement('i');
+      i.style.height = v != null ? Math.max(8, Math.min(100, v / max * 100)) + '%' : '8%';
+      i.style.background = v != null ? col(v) : 'var(--dim)';
+      bars.appendChild(i);
+    });
+    riga.appendChild(r1); riga.appendChild(bars);
+    el.appendChild(riga);
+  });
+  const agg = document.createElement('div');
+  agg.className = 'agg';
+  agg.textContent = 'AGGIORNATO ' + new Date(ultimo.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
+  el.appendChild(agg);
+}
+const RE_SALUTE = /passi|cammin|sonno|dorm|frequenza|battit|cuore|salute|stanc|riposat|movimento|attivit/i;
+function saluteTestoPerJarvis() {
+  const giorni = Object.keys(saluteDati).sort().slice(-7);
+  if (!giorni.length) return '';
+  const riga = g => {
+    const v = saluteDati[g], p = [];
+    if (v.passi != null) p.push(v.passi + ' passi');
+    if (v.sonno != null) p.push('sonno ' + v.sonno + ' ore');
+    if (v.fc != null) p.push('frequenza cardiaca a riposo ' + v.fc);
+    return g + ': ' + p.join(', ');
+  };
+  return 'Dati di Apple Salute dell\'utente, inviati dal suo iPhone (non in tempo reale). ' + giorni.map(riga).join('. ') +
+    '. Commentali in modo semplice e senza dare pareri medici.';
+}
+
+/* ---------- AGENDA ---------- */
+let agendaDati = null;
+function renderAgenda(a) {
+  if (!a || !a.testo) return;
+  agendaDati = a;
+  const el = $('#agenda');
+  el.innerHTML = '';
+  a.testo.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 25).forEach(r => {
+    const d = document.createElement('div');
+    d.textContent = r;
+    el.appendChild(d);
+  });
+  const agg = document.createElement('div');
+  agg.style.cssText = 'font-size:9px;opacity:.6;border:0';
+  agg.textContent = 'AGGIORNATO ' + new Date(a.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
+  el.appendChild(agg);
+}
+const RE_AGENDA = /calendario|agenda|appuntament|impegn|libero|libera|occupat|riunion|evento|eventi|scadenz/i;
+function agendaTestoPerJarvis() {
+  if (!agendaDati) return '';
+  return 'Agenda dell\'utente dal suo calendario iCloud, prossimi 7 giorni (inviata dall\'iPhone alle ' +
+    new Date(agendaDati.t).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) +
+    ', non in tempo reale): ' + agendaDati.testo.replace(/\s*\n\s*/g, ' | ') +
+    '. Rispondi usando questi eventi. Se la domanda riguarda un orario non coperto da questi dati, dillo.';
+}
+
 /* ---------- COLLEGAMENTO ---------- */
 async function chiama(corpo) {
   const r = await fetch(cfg.url, {
@@ -343,7 +442,7 @@ async function caricaStato() {
   if (!cfg.url || !cfg.code) return;
   try {
     const j = await chiama({ azione: 'stato' });
-    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); }
+    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); }
     else if (j.risposta) log('sys', j.risposta);
   } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); }
 }
@@ -440,6 +539,16 @@ async function chiedi(q) {
       if (meteoTesto) { inviata = q + '\n\n[Dati meteo aggiornati, usali per rispondere: ' + meteoTesto + ']'; log('sys', '☁ Previsioni allegate alla domanda'); }
       else log('sys', 'Dati meteo non disponibili: controlla il riquadro METEO o tocca CAMBIA CITTÀ.');
     }
+    if (RE_SALUTE.test(q) && !/meteo|tempo/i.test(q)) {
+      const st = saluteTestoPerJarvis();
+      if (st) { inviata += '\n\n[' + st + ']'; log('sys', '♥ Dati salute allegati alla domanda'); }
+      else log('sys', 'Nessun dato salute ricevuto: serve prima il Comando Rapido sull\'iPhone.');
+    }
+    if (RE_AGENDA.test(q)) {
+      const at = agendaTestoPerJarvis();
+      if (at) { inviata += '\n\n[' + at + ']'; log('sys', '📅 Agenda allegata alla domanda'); }
+      else log('sys', 'Nessuna agenda ricevuta: serve prima il Comando Rapido sull\'iPhone.');
+    }
     const j = await chiama({ domanda: inviata, storia: storia.slice(-8) });
     storia.push({ r: 'u', t: q }, { r: 'j', t: j.risposta });
     if (storia.length > 16) storia.splice(0, storia.length - 16);
@@ -494,7 +603,7 @@ $('#bRes').onclick = () => {
 aggiornaLink();
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v10)');
+log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v12)');
 setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
 setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); caricaStato(); }, 2500);
 if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
