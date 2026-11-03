@@ -7,27 +7,22 @@
 <meta name="apple-mobile-web-app-title" content="Jarvis">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#03080c">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
 <title>Jarvis</title>
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;--f:Orbitron,ui-monospace,Menlo,monospace;height:100vh;height:100dvh;background:#03080c;color:var(--c);font-family:ui-monospace,Menlo,monospace;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background-image:radial-gradient(circle at 50% 45%,rgba(25,120,200,.18),transparent 60%),linear-gradient(var(--dim) 1px,transparent 1px),linear-gradient(90deg,var(--dim) 1px,transparent 1px);background-size:100% 100%,48px 48px,48px 48px}
+body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;height:100vh;height:100dvh;background:#03080c;color:var(--c);font-family:ui-monospace,Menlo,monospace;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background-image:linear-gradient(var(--dim) 1px,transparent 1px),linear-gradient(90deg,var(--dim) 1px,transparent 1px);background-size:48px 48px;background-blend-mode:soft-light}
 body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.32);--v:3}
 body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.32);--v:1.4}
-body[data-s=speaking]{--v:2}
-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
-header h1{font:700 20px var(--f);letter-spacing:.3em}
+body[data-s=speaking]{--c:#19e3f0;--v:2}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
+header h1{font-size:18px;letter-spacing:.35em}
 header small{display:block;font-size:9px;letter-spacing:.15em;opacity:.55;margin-top:3px}
-header>:first-child{justify-self:start}
-header>.st:last-child{justify-self:end;text-align:right}
 .st{text-align:center;font-size:10px;letter-spacing:.2em}
-.st b{display:block;font:500 14px var(--f);margin-top:3px}
+.st b{display:block;font-size:14px;margin-top:3px}
 main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-height:0}
-.panel{z-index:2;position:relative;border:1px solid var(--dim);padding:14px;background:rgba(3,8,12,.8);display:flex;flex-direction:column;min-height:0;gap:10px}
+.panel{position:relative;border:1px solid var(--dim);padding:14px;background:rgba(3,8,12,.8);display:flex;flex-direction:column;min-height:0;gap:10px}
 .panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--c)}
 .panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
 .panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
@@ -35,40 +30,28 @@ main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-
 #left{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
 #left>*{flex:none}
 .btn{background:transparent;color:var(--c);border:1px solid var(--c);padding:11px 8px;font:inherit;font-size:11px;letter-spacing:.1em;cursor:pointer}
-.btn:active,.btn.on{background:var(--dim)}
+.btn:active{background:var(--dim)}
 .row{display:flex;justify-content:space-between;font-size:12px}
 .tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tools .wide{grid-column:1/-1}
 .mem{display:flex;flex-direction:column;gap:10px}
+.mem canvas{width:100%;height:105px;display:block;border:1px solid var(--dim);background:rgba(25,227,240,.03)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .stats div{border:1px solid var(--dim);padding:6px 2px;text-align:center}
 .stats b{display:block;font-size:16px;margin-bottom:2px}
 .stats span{font-size:7.5px;letter-spacing:.05em;opacity:.7}
-#ult{font-size:11px;line-height:1.5;opacity:.85;max-height:64px;overflow:hidden}
+#ult{font-size:11px;line-height:1.5;opacity:.85;max-height:34px;overflow:hidden}
 .meteo-main{display:flex;align-items:center;gap:14px}
 .mi{font-size:42px;line-height:1}
-.mt{font:500 28px var(--f)}
+.mt{font-size:28px;letter-spacing:.05em}
 .mc{font-size:11px;opacity:.8;margin-top:2px}
-.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0}
-.hello{font:500 clamp(12px,2.2vmin,17px) var(--f);letter-spacing:.2em;text-align:center}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:0}
 .orb{position:relative;width:min(54vmin,420px);aspect-ratio:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.cerv{font:500 clamp(10px,1.8vmin,14px) var(--f);letter-spacing:.12em;text-align:center}
-.cerv b{font-size:1.4em;text-shadow:0 0 10px var(--c)}
-#rete{position:absolute;inset:-18%;width:136%;height:136%;pointer-events:none}
-.orbsvg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.orbsvg g circle{fill:none;stroke:var(--c)}
-.orbsvg .ar{stroke:#e4faff;stroke-width:2;filter:drop-shadow(0 0 3px var(--c))}
-.orbsvg .w3{stroke-width:3.6}
-.orbsvg .tk{stroke-width:5;stroke-dasharray:.8 3.7;opacity:.55}
-.orbsvg .th{stroke-width:.6;opacity:.7}
-.orbsvg .dt{stroke-width:3;stroke-dasharray:0 7.5;stroke-linecap:round;opacity:.8}
-.g0{animation:spin 90s linear infinite}
-.g1{animation:spin calc(var(--v)*1.5s) linear infinite reverse}
-.g2{animation:spin calc(var(--v)*1s) linear infinite}
-.g3{animation:spin calc(var(--v)*2s) linear infinite reverse}
-.g4{animation:spin 40s linear infinite}
-.pl{animation:pulse 3s ease-in-out infinite}
-.core{position:relative;z-index:2;width:30%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;text-align:center;font:500 clamp(8px,1.5vmin,12px) var(--f);color:#031b24;font-weight:700;letter-spacing:.12em;line-height:1.5}
+.ring{position:absolute;border-radius:50%}
+.r1{inset:0;border:1px dashed var(--dim);animation:spin 50s linear infinite}
+.r2{inset:8%;border:2px solid transparent;border-top-color:var(--c);border-bottom-color:var(--c);animation:spin calc(var(--v)*1s) linear infinite reverse}
+.r3{inset:17%;border:1px solid var(--dim);background:conic-gradient(from 0deg,transparent 0 78%,var(--dim) 100%);animation:spin calc(var(--v)*.6s) linear infinite}
+.r4{inset:29%;border:1px solid var(--c);box-shadow:0 0 28px var(--dim),inset 0 0 28px var(--dim);animation:pulse 3s ease-in-out infinite}
+.core{position:relative;z-index:2;width:30%;aspect-ratio:1;border-radius:50%;border:2px solid var(--c);display:grid;place-items:center;text-align:center;font-size:clamp(9px,1.7vmin,13px);letter-spacing:.14em;line-height:1.5;background:radial-gradient(circle,var(--dim),transparent 72%)}
 .wave{display:flex;gap:3px;align-items:center;height:34px}
 .wave span{width:3px;height:30px;background:var(--c);transform:scaleY(.15);animation:wv 1s ease-in-out infinite;animation-play-state:paused}
 body[data-s=listening] .wave span,body[data-s=speaking] .wave span,body[data-s=thinking] .wave span{animation-play-state:running}
@@ -80,11 +63,9 @@ body[data-s=listening] .wave span,body[data-s=speaking] .wave span,body[data-s=t
 footer{display:flex;gap:8px;padding:10px 16px 14px}
 footer input{flex:1;background:rgba(3,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
 footer input:focus{border-color:var(--c)}
-#boot{position:fixed;inset:0;background:#03080c;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;font:500 12px var(--f);letter-spacing:.2em;transition:opacity .8s}
-#bl{text-align:center;line-height:2.2;min-height:9em}
-#bt{cursor:pointer;padding:12px 22px;border:1px solid var(--c);animation:pulse 2s ease-in-out infinite}
+#boot{position:fixed;inset:0;background:#03080c;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;font-size:12px;letter-spacing:.2em;transition:opacity .8s}
 #boot .bar{width:min(70vw,360px);height:4px;background:var(--dim)}
-#boot .bar i{display:block;height:100%;width:0;background:var(--c);box-shadow:0 0 10px var(--c);transition:width .5s ease-out}
+#boot .bar i{display:block;height:100%;width:0;background:var(--c);transition:width 2.2s ease-out}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{50%{transform:scale(1.04);opacity:.7}}
 @keyframes wv{50%{transform:scaleY(1)}}
@@ -94,23 +75,16 @@ footer input:focus{border-color:var(--c)}
   #left{order:2;overflow:visible}
   .logp{order:3;min-height:260px}
   .orb{width:min(60vw,270px)}
+  .mem canvas{height:120px}
   header small{display:none}
-  header{padding:10px 12px;gap:6px}
-  header h1{font-size:11px;letter-spacing:.1em}
-  .st{letter-spacing:.08em}
-  .st b{font-size:11px}
-  main{grid-auto-rows:min-content}
-  .center,#left,.panel{min-height:auto}
-  .logp{min-height:260px}
 }
-@media(prefers-reduced-motion:reduce){.orbsvg g,.pl{animation:none}}
 </style>
 </head>
 <body data-s="idle">
-<div id="boot"><div id="bl"></div><div class="bar"><i id="bi"></i></div><div id="bt">TOCCA PER AVVIARE</div></div>
+<div id="boot"><div>INIZIALIZZAZIONE SISTEMA...</div><div class="bar"><i id="bi"></i></div></div>
 
 <header>
-  <div><h1>J.A.R.V.I.S.</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div>
+  <div><h1>JARVIS</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div>
   <div class="st">STATO<b id="stato">IN ATTESA</b></div>
   <div class="st">ORA<b id="ora">--:--:--</b></div>
 </header>
@@ -122,14 +96,13 @@ footer input:focus{border-color:var(--c)}
       <div class="row"><span>COLLEGAMENTO</span><span id="link">NON CONFIGURATO</span></div>
       <div class="tools">
         <button class="btn" id="bRes">RESOCONTO</button>
-        <button class="btn" id="bVoce">CAMBIA VOCE</button>
+        <button class="btn" id="bVoce">PROVA VOCE</button>
         <button class="btn" id="bCfg">IMPOSTAZIONI</button>
         <button class="btn" id="bStop">ZITTISCI</button>
-        <button class="btn wide" id="bVel">VELOCIT&Agrave;</button>
-        <button class="btn wide" id="bAuto">ASCOLTO CONTINUO: NO</button>
       </div>
       <div class="mem">
         <h2>MEMORIA // RETE NEURALE</h2>
+        <canvas id="rete"></canvas>
         <div class="stats">
           <div><b id="nR">0</b><span>NEURONI</span></div>
           <div><b id="nS">0</b><span>SINAPSI</span></div>
@@ -147,27 +120,14 @@ footer input:focus{border-color:var(--c)}
         <div><div class="mt" id="mTemp">--&deg;C</div><div class="mc" id="mCond">In attesa dati...</div></div>
       </div>
       <div class="row"><span>MIN <b id="mMin">--&deg;</b></span><span>MAX <b id="mMax">--&deg;</b></span></div>
-      <div class="row"><span>PIOGGIA <b id="mPio">--%</b></span><span>UMIDIT&Agrave; <b id="mUmi">--%</b></span></div>
-      <div class="row"><span>VENTO</span><b id="mVen">-- km/h</b></div>
       <div class="row"><span>DOMANI</span><b id="mDomani" style="text-align:right">--</b></div>
       <button class="btn" id="bCitta">CAMBIA CITT&Agrave;</button>
     </section>
   </div>
 
   <section class="center">
-    <div class="hello" id="hello"></div>
-    <div class="cerv" id="cerv"><b>0</b> NEURONI &middot; <b>0</b> SINAPSI</div>
     <div class="orb" id="orb">
-      <canvas id="rete"></canvas>
-      <svg class="orbsvg" viewBox="-100 -100 200 200" aria-hidden="true">
-        <defs><radialGradient id="gl"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#d6f6ff" stop-opacity=".95"/><stop offset=".72" style="stop-color:var(--c)" stop-opacity=".4"/><stop offset="1" style="stop-color:var(--c)" stop-opacity="0"/></radialGradient></defs>
-        <g class="g0"><circle r="97" class="tk"/><circle r="91" class="th"/></g>
-        <g class="g1"><circle r="82" class="ar w3" stroke-dasharray="140 40 90 36 110 100"/></g>
-        <g class="g2"><circle r="68" class="ar" stroke-dasharray="80 30 120 20 90 87"/></g>
-        <g class="g3"><circle r="55" class="ar" stroke-dasharray="60 25 100 30 70 62"/></g>
-        <g class="g4"><circle r="43" class="dt"/></g>
-        <circle r="36" fill="url(#gl)" class="pl"/>
-      </svg>
+      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
       <div class="core" id="core">TOCCA<br>PER PARLARE</div>
     </div>
     <div class="wave" id="wave"></div>
@@ -189,7 +149,8 @@ const $ = s => document.querySelector(s);
 const get = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
 const put = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 let cfg = { url: get('j_url'), code: get('j_code') };
-let storia = [], recenti = [], auto = false, sessione = 0;
+let storia = [];
+let recenti = [];
 
 const NOMI = { idle: 'IN ATTESA', listening: 'TI ASCOLTO', thinking: 'ELABORO', speaking: 'PARLO' };
 const CORE = { idle: 'TOCCA<br>PER PARLARE', listening: 'ASCOLTO...', thinking: 'ELABORO...', speaking: 'JARVIS<br>PARLA' };
@@ -207,11 +168,6 @@ function log(chi, testo) {
   d.scrollIntoView({ block: 'nearest' });
 }
 function aggiornaLink() { $('#link').textContent = (cfg.url && cfg.code) ? 'ONLINE' : 'NON CONFIGURATO'; }
-function saluto() {
-  const h = new Date().getHours();
-  return h < 5 ? 'Buonanotte' : h < 13 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
-}
-$('#hello').textContent = saluto().toUpperCase() + ', SIGNORE';
 
 for (let i = 0; i < 28; i++) {
   const s = document.createElement('span');
@@ -235,8 +191,8 @@ function costruisci(n) {
   const N = Math.min(n, 150) + 1;
   for (let i = 0; i < N; i++) {
     if (i === 0) { nodi.push({ x: 0.5, y: 0.5, f: 0, nuovo: 0 }); continue; }
-    const a = rnd(i * 2) * Math.PI * 2, r = 0.2 + rnd(i * 2 + 1) * 0.28;
-    nodi.push({ x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r, f: rnd(i * 3) * 6.28, nuovo: 0 });
+    const a = rnd(i * 2) * Math.PI * 2, r = Math.sqrt(rnd(i * 2 + 1)) * 0.9;
+    nodi.push({ x: 0.5 + Math.cos(a) * r * 0.46, y: 0.5 + Math.sin(a) * r * 0.44, f: rnd(i * 3) * 6.28, nuovo: 0 });
   }
   for (let i = 1; i < N; i++) {
     const d = [];
@@ -254,7 +210,7 @@ function disegna(t) {
   const col = getComputedStyle(document.body).getPropertyValue('--c').trim() || '#19e3f0';
   cx.strokeStyle = col; cx.fillStyle = col; cx.lineWidth = 1;
   const P = n => [(n.x + Math.sin(t / 2500 + n.f) * 0.012) * w, (n.y + Math.cos(t / 2900 + n.f) * 0.012) * h];
-  cx.globalAlpha = 0.42;
+  cx.globalAlpha = 0.28;
   archi.forEach(([a, b]) => {
     const A = P(nodi[a]), B = P(nodi[b]);
     cx.beginPath(); cx.moveTo(A[0], A[1]); cx.lineTo(B[0], B[1]); cx.stroke();
@@ -265,7 +221,7 @@ function disegna(t) {
     n.nuovo = Math.max(0, n.nuovo - 0.004);
     cx.globalAlpha = 0.5 + 0.4 * pulse;
     cx.beginPath();
-    cx.arc(p[0], p[1], (i === 0 ? 0.1 : 3) + n.nuovo * 8, 0, 6.283);
+    cx.arc(p[0], p[1], (i === 0 ? 4 : 2.2) + n.nuovo * 7, 0, 6.283);
     cx.fill();
   });
   cx.globalAlpha = 1;
@@ -278,10 +234,6 @@ function aggiornaStats(st, nuovi) {
   $('#nG').textContent = st.giorni;
   costruisci(st.ricordi);
   $('#nS').textContent = archi.length;
-  const k = 'j_base_' + new Date().toDateString();
-  if (!get(k)) put(k, String(st.ricordi));
-  const oggi = st.ricordi - Number(get(k));
-  $('#cerv').innerHTML = '<b>' + st.ricordi + '</b> NEURONI &middot; <b>' + archi.length + '</b> SINAPSI' + (oggi > 0 ? ' &middot; +' + oggi + ' OGGI' : '');
   (nuovi || []).forEach((_, k) => { const n = nodi[nodi.length - 1 - k]; if (n && n !== nodi[0]) n.nuovo = 1; });
 }
 function mostraRecenti() {
@@ -296,11 +248,18 @@ costruisci(0);
 requestAnimationFrame(disegna);
 
 /* ---------- METEO ---------- */
-const WMO = {};
-[[[0, 1], 'Sereno', '☀'], [[2], 'Parzialmente nuvoloso', '☁'], [[3], 'Coperto', '☁'], [[45, 48], 'Nebbia', '≋'],
- [[51, 53, 55, 56, 57], 'Pioggerella', '☂'], [[61, 63, 65, 66, 67], 'Pioggia', '☂'],
- [[71, 73, 75, 77, 85, 86], 'Neve', '❄'], [[80, 81, 82], 'Rovesci', '☂'], [[95, 96, 99], 'Temporale', '⚡']
-].forEach(([c, n, i]) => c.forEach(k => WMO[k] = [n, i]));
+const WMO = {
+  0: ['Sereno', '☀'], 1: ['Prevalentemente sereno', '☀'], 2: ['Parzialmente nuvoloso', '☁'], 3: ['Coperto', '☁'],
+  45: ['Nebbia', '≋'], 48: ['Nebbia con brina', '≋'],
+  51: ['Pioggerella leggera', '☂'], 53: ['Pioggerella', '☂'], 55: ['Pioggerella intensa', '☂'],
+  56: ['Pioggerella gelata', '☂'], 57: ['Pioggerella gelata intensa', '☂'],
+  61: ['Pioggia leggera', '☂'], 63: ['Pioggia', '☂'], 65: ['Pioggia forte', '☂'],
+  66: ['Pioggia gelata', '☂'], 67: ['Pioggia gelata forte', '☂'],
+  71: ['Neve leggera', '❄'], 73: ['Neve', '❄'], 75: ['Neve forte', '❄'], 77: ['Granelli di neve', '❄'],
+  80: ['Rovesci leggeri', '☂'], 81: ['Rovesci', '☂'], 82: ['Rovesci violenti', '☂'],
+  85: ['Rovesci di neve', '❄'], 86: ['Forti rovesci di neve', '❄'],
+  95: ['Temporale', '⚡'], 96: ['Temporale con grandine', '⚡'], 99: ['Forte temporale con grandine', '⚡']
+};
 let meteoTesto = '';
 function trovaPosizione() {
   return new Promise(res => {
@@ -327,7 +286,7 @@ async function caricaMeteo() {
   $('#citta').textContent = (pos.nome || 'LA TUA POSIZIONE').toUpperCase();
   try {
     const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos.lat + '&longitude=' + pos.lon +
-      '&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');
+      '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');
     const j = await r.json();
     const w = WMO[j.current.weather_code] || ['Condizioni non disponibili', '☁'];
     $('#mIcona').textContent = w[1];
@@ -336,9 +295,6 @@ async function caricaMeteo() {
     const d = j.daily;
     $('#mMin').textContent = Math.round(d.temperature_2m_min[0]) + '°';
     $('#mMax').textContent = Math.round(d.temperature_2m_max[0]) + '°';
-    $('#mPio').textContent = (d.precipitation_probability_max ? d.precipitation_probability_max[0] : '--') + '%';
-    $('#mUmi').textContent = Math.round(j.current.relative_humidity_2m) + '%';
-    $('#mVen').textContent = Math.round(j.current.wind_speed_10m) + ' km/h';
     const dom = WMO[d.weather_code[1]] || ['--', '☁'];
     $('#mDomani').textContent = dom[0] + ' ' + Math.round(d.temperature_2m_min[1]) + '°/' + Math.round(d.temperature_2m_max[1]) + '°';
     const giorni = d.time.map((dt, i) => {
@@ -349,7 +305,7 @@ async function caricaMeteo() {
         Math.round(d.temperature_2m_max[i]) + ' gradi, probabilità di pioggia ' + pioggia + '%';
     });
     meteoTesto = 'Previsioni meteo reali per ' + (pos.nome || "la posizione dell'utente") + ' (fonte Open-Meteo). Adesso: ' +
-      Math.round(j.current.temperature_2m) + ' gradi, ' + w[0] + ', umidità ' + Math.round(j.current.relative_humidity_2m) + '%, vento ' + Math.round(j.current.wind_speed_10m) + ' chilometri orari. ' + giorni.join('. ') + '.';
+      Math.round(j.current.temperature_2m) + ' gradi, ' + w[0] + '. ' + giorni.join('. ') + '.';
   } catch (e) {
     $('#mCond').textContent = 'Meteo non raggiungibile';
   }
@@ -408,31 +364,13 @@ function voci() {
 }
 function vocePreferita() {
   const it = voci();
-  const salvata = get('j_voce2');
-  return it.find(v => v.name === salvata)
-    || it.find(v => /premium|enhanced|avanzat|migliorat/i.test(v.name))
-    || it.find(v => /luca|federica|paola/i.test(v.name))
-    || it.find(v => !/alice/i.test(v.name))
+  return it.find(v => /premium|enhanced|avanzat|migliorat/i.test(v.name))
+    || it.find(v => /luca/i.test(v.name))
     || it[0] || null;
 }
-function cambiaVoce() {
-  const it = voci();
-  const opzioni = it.map(v => v.name).concat(['GEMINI']);
-  const attuale = vocePreferita();
-  const corrente = get('j_voce2') || (attuale ? attuale.name : 'GEMINI');
-  const prossima = opzioni[(opzioni.indexOf(corrente) + 1) % opzioni.length];
-  put('j_voce2', prossima);
-  log('sys', 'Voce: ' + (prossima === 'GEMINI' ? 'Gemini (naturale, a pagamento)' : prossima));
-  parla('Salve, sono Jarvis. Questa è la mia nuova voce.');
-}
-const VEL = [0.8, 0.9, 1, 1.05, 1.15];
-const vel = () => Number(get('j_vel')) || 1.05;
-function mostraVel() { $('#bVel').textContent = 'VELOCITÀ: ' + vel(); }
-function cambiaVel() {
-  put('j_vel', String(VEL[(VEL.indexOf(vel()) + 1) % VEL.length]));
-  mostraVel();
-  sbloccaAudio();
-  parla('Questa è la mia nuova velocità.');
+function provaVoce() {
+  log('sys', 'Prova della voce Gemini...');
+  parla('Salve, sono Jarvis. Questa è la mia voce.');
 }
 const player = new Audio();
 function sbloccaAudio() {
@@ -445,80 +383,44 @@ function sbloccaAudio() {
   u.volume = 0;
   speechSynthesis.speak(u);
 }
-function fermaVoce() { sessione++; speechSynthesis.cancel(); player.pause(); }
-function fineParlato() {
-  setState('idle');
-  if (auto) setTimeout(ascolta, 400);
-}
 function parla(t) {
-  fermaVoce();
-  if (get('j_voce2') === 'GEMINI') parlaGemini(t); else parlaApple(t);
+  parlaGemini(t);
 }
-const pulisci = t => t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ').trim();
-function spezza(t) {
-  const frasi = t.match(/[^.!?]+[.!?]*\s*/g) || [t];
-  const out = []; let c = '';
-  frasi.forEach(f => { if (c && (c + f).length > 260) { out.push(c); c = f; } else c += f; });
-  if (c) out.push(c);
-  return out.slice(0, 6);
+function tagliaVoce(t, max) {
+  if (t.length <= max) return t;
+  const taglio = t.slice(0, max);
+  const p = Math.max(taglio.lastIndexOf('. '), taglio.lastIndexOf('! '), taglio.lastIndexOf('? '));
+  return p > 200 ? taglio.slice(0, p + 1) : taglio;
 }
 async function parlaGemini(t) {
-  const id = sessione, t0 = Date.now();
-  const parti = spezza(pulisci(t));
-  const prendi = p => chiama({ azione: 'voce', testo: p }).then(j => {
-    if (!j.audio) throw new Error((j.errore || 'nessun audio ricevuto').slice(0, 200));
-    return 'data:audio/wav;base64,' + j.audio;
-  });
+  const t0 = Date.now();
   try {
-    let next = prendi(parti[0]);
-    for (let i = 0; i < parti.length; i++) {
-      const src = await next;
-      if (id !== sessione) return;
-      if (i + 1 < parti.length) next = prendi(parti[i + 1]);
-      await new Promise((ok, ko) => {
-        player.onplay = () => setState('speaking');
-        player.onended = ok;
-        player.onerror = () => ko(new Error('audio non riproducibile'));
-        player.src = src;
-        player.play().catch(ko);
-      });
-      if (id !== sessione) return;
-    }
-    fineParlato();
+    const testo = tagliaVoce(t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' '), 700);
+    const j = await chiama({ azione: 'voce', testo: testo });
+    if (!j.audio) throw new Error((j.errore || 'nessun audio ricevuto').slice(0, 200));
+    player.onplay = () => setState('speaking');
+    player.onended = player.onerror = () => setState('idle');
+    player.src = 'data:audio/wav;base64,' + j.audio;
+    await player.play();
   } catch (e) {
-    if (id !== sessione) return;
     const m = String(e.message);
     let motivo = m;
-    if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite della voce raggiunto';
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
     else if (/load failed/i.test(m)) motivo = 'nessuna risposta dopo ' + Math.round((Date.now() - t0) / 1000) + ' secondi';
-    log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple.');
+    log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple solo per questa risposta.');
     parlaApple(t);
   }
 }
-function parlaApple(t, riprova) {
-  const u = new SpeechSynthesisUtterance(pulisci(t));
-  const v = riprova ? null : vocePreferita();
+function parlaApple(t) {
+  const pulito = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
+  const u = new SpeechSynthesisUtterance(pulito);
   u.lang = 'it-IT';
-  u.voice = v;
-  u.rate = vel(); u.pitch = 1;
-  const nome = v ? v.name : 'di sistema';
-  let partita = false;
-  const guardia = setTimeout(() => {
-    if (partita) return;
-    speechSynthesis.cancel();
-    if (riprova) { log('sys', 'La voce ' + nome + ' non risponde. Controlla il volume e prova CAMBIA VOCE.'); setState('idle'); }
-    else { log('sys', 'La voce ' + nome + ' non parte: provo con quella di sistema.'); parlaApple(t, 1); }
-  }, 3000);
-  u.onstart = () => { partita = true; clearTimeout(guardia); setState('speaking'); };
-  u.onend = () => { clearTimeout(guardia); fineParlato(); };
-  u.onerror = e => {
-    if (e.error === 'interrupted' || e.error === 'canceled') return;
-    clearTimeout(guardia);
-    log('sys', 'Errore voce ' + nome + ': ' + e.error);
-    if (!riprova) parlaApple(t, 1); else setState('idle');
-  };
+  u.voice = vocePreferita();
+  u.rate = 1; u.pitch = 1;
+  u.onstart = () => setState('speaking');
+  u.onend = u.onerror = () => setState('idle');
   speechSynthesis.cancel();
-  setTimeout(() => speechSynthesis.speak(u), 120);
+  speechSynthesis.speak(u);
 }
 
 /* ---------- DOMANDE ---------- */
@@ -538,9 +440,9 @@ async function chiedi(q) {
       if (meteoTesto) { inviata = q + '\n\n[Dati meteo aggiornati, usali per rispondere: ' + meteoTesto + ']'; log('sys', '☁ Previsioni allegate alla domanda'); }
       else log('sys', 'Dati meteo non disponibili: controlla il riquadro METEO o tocca CAMBIA CITTÀ.');
     }
-    const j = await chiama({ domanda: inviata, storia: storia.slice(-6) });
+    const j = await chiama({ domanda: inviata, storia: storia.slice(-8) });
     storia.push({ r: 'u', t: q }, { r: 'j', t: j.risposta });
-    if (storia.length > 12) storia.splice(0, storia.length - 12);
+    if (storia.length > 16) storia.splice(0, storia.length - 16);
     log('jarvis', j.risposta);
     (j.nuovi || []).forEach(r => { log('mem', '◆ Ricordo appreso: ' + r); recenti.push(r); });
     aggiornaStats(j.stats, j.nuovi);
@@ -558,7 +460,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
 function ascolta() {
   if (!SR) { log('sys', 'Qui il microfono non è supportato: scrivi nel campo in basso.'); return; }
-  fermaVoce();
+  speechSynthesis.cancel();
   if (rec) { rec.stop(); return; }
   rec = new SR();
   rec.lang = 'it-IT';
@@ -582,68 +484,21 @@ $('#bSend').onclick = () => { sbloccaAudio(); invia(); };
 $('#txt').addEventListener('keydown', e => { if (e.key === 'Enter') { sbloccaAudio(); invia(); } });
 $('#bCfg').onclick = configura;
 $('#bCitta').onclick = cambiaCitta;
-$('#bVoce').onclick = () => { sbloccaAudio(); cambiaVoce(); };
-$('#bStop').onclick = () => { fermaVoce(); setState('idle'); };
-$('#bVel').onclick = cambiaVel;
-$('#bAuto').onclick = () => {
-  auto = !auto;
-  $('#bAuto').textContent = 'ASCOLTO CONTINUO: ' + (auto ? 'SÌ' : 'NO');
-  $('#bAuto').classList.toggle('on', auto);
-  if (auto) { sbloccaAudio(); ascolta(); }
-};
+$('#bVoce').onclick = () => { sbloccaAudio(); provaVoce(); };
+$('#bStop').onclick = () => { speechSynthesis.cancel(); player.pause(); setState('idle'); };
 $('#bRes').onclick = () => {
   sbloccaAudio();
   chiedi('Fammi un resoconto delle email importanti, in ordine di priorità.');
 };
 
-/* ---------- AVVIO ---------- */
 aggiornaLink();
-mostraVel();
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', saluto() + '. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v14)');
-const ok = !!(cfg.url && cfg.code);
-const RIGHE = [
-  ['INIZIALIZZAZIONE SISTEMI OK', 'Inizializzazione dei sistemi completata.'],
-  ['RETE NEURALE ONLINE', 'Rete neurale online.'],
-  ['COLLEGAMENTO AL CERVELLO ' + (ok ? 'OK' : 'DA CONFIGURARE'), ok ? 'Collegamento al cervello attivo.' : 'Il collegamento al cervello va ancora configurato.'],
-  ['SINTESI VOCALE PRONTA', 'Sintesi vocale pronta.']
-];
-let avviato = false, salta = false;
-function leggiBreve(t) {
-  return new Promise(res => {
-    if (salta) return res();
-    const fine = () => { clearTimeout(tm); res(); };
-    const tm = setTimeout(fine, 5000);
-    try {
-      const u = new SpeechSynthesisUtterance(t);
-      u.lang = 'it-IT'; u.voice = vocePreferita(); u.rate = vel();
-      u.onend = u.onerror = fine;
-      speechSynthesis.speak(u);
-    } catch (e) { fine(); }
-  });
-}
-async function avvia() {
-  if (avviato) { salta = true; speechSynthesis.cancel(); return; }
-  avviato = true;
-  sbloccaAudio();
-  $('#bt').remove();
-  for (let i = 0; i < RIGHE.length; i++) {
-    const d = document.createElement('div');
-    d.textContent = RIGHE[i][0];
-    $('#bl').appendChild(d);
-    $('#bi').style.width = (i + 1) * 25 + '%';
-    await leggiBreve(RIGHE[i][1]);
-  }
-  await leggiBreve(saluto() + ', signore. Sono pronto.');
-  const vv = vocePreferita();
-  log('sys', 'Voce in uso: ' + (get('j_voce2') || (vv ? vv.name : 'di sistema')) + ' · velocità ' + vel());
-  $('#boot').style.opacity = 0;
-  setTimeout(() => $('#boot').remove(), 900);
-  caricaStato(); caricaMeteo();
-  if (!ok) setTimeout(configura, 800);
-}
-$('#boot').addEventListener('click', avvia);
+log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v10)');
+setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
+setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); caricaStato(); }, 2500);
+if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
+setTimeout(caricaMeteo, 4500);
 </script>
 </body>
 </html>
