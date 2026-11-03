@@ -6,110 +6,231 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Jarvis">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#03080c">
+<meta name="theme-color" content="#020609">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" type="image/png" href="icon.png">
 <title>Jarvis</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{--c:#19e3f0;--dim:rgba(25,227,240,.32);--v:8;height:100vh;height:100dvh;background:#03080c;color:var(--c);font-family:ui-monospace,Menlo,monospace;overflow:hidden;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background-image:linear-gradient(var(--dim) 1px,transparent 1px),linear-gradient(90deg,var(--dim) 1px,transparent 1px);background-size:48px 48px;background-blend-mode:soft-light}
-body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.32);--v:3}
-body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.32);--v:1.4}
-body[data-s=speaking]{--c:#19e3f0;--v:2}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--dim);background:rgba(3,8,12,.85)}
-header h1{font-size:18px;letter-spacing:.35em}
-header small{display:block;font-size:9px;letter-spacing:.15em;opacity:.55;margin-top:3px}
-.st{text-align:center;font-size:10px;letter-spacing:.2em}
-.st b{display:block;font-size:14px;margin-top:3px}
-main{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:16px;padding:16px;min-height:0}
-.panel{position:relative;border:1px solid var(--dim);padding:14px;background:rgba(3,8,12,.8);display:flex;flex-direction:column;min-height:0;gap:10px}
-.panel::before,.panel::after{content:"";position:absolute;width:12px;height:12px;border:2px solid var(--c)}
-.panel::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
-.panel::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
-.panel h2{font-size:10px;letter-spacing:.25em;opacity:.7;font-weight:400}
-#left{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
-#left>*{flex:none}
-.btn{background:transparent;color:var(--c);border:1px solid var(--c);padding:11px 8px;font:inherit;font-size:11px;letter-spacing:.1em;cursor:pointer}
+:root{--mono:ui-monospace,Menlo,monospace;--sans:'Avenir Next','Helvetica Neue',Helvetica,Arial,sans-serif}
+body{--c:#19e3f0;--dim:rgba(25,227,240,.28);--soft:rgba(25,227,240,.09);--ok:#4dffb0;--warn:#ffb62e;--bad:#ff5a5a;
+  height:100vh;height:100dvh;background:#020609;color:var(--c);font-family:var(--mono);overflow:hidden;
+  display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);position:relative}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 60% 55% at 50% 52%,var(--soft),transparent 70%),
+  linear-gradient(rgba(25,227,240,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(25,227,240,.045) 1px,transparent 1px);
+  background-size:100% 100%,44px 44px,44px 44px}
+body[data-s=listening]{--c:#4dffb0;--dim:rgba(77,255,176,.28);--soft:rgba(77,255,176,.09)}
+body[data-s=thinking]{--c:#ffb62e;--dim:rgba(255,182,46,.28);--soft:rgba(255,182,46,.09)}
+body>*{position:relative;z-index:1}
+
+/* ----- titolo ----- */
+.top{text-align:center;padding:14px 12px 4px;flex:none}
+.top h1{font-family:var(--sans);font-weight:200;font-size:clamp(24px,4.4vw,46px);letter-spacing:.5em;padding-left:.5em;text-shadow:0 0 22px var(--c),0 0 4px var(--c)}
+.top .sal{font-family:var(--sans);font-weight:300;font-size:clamp(12px,1.6vw,16px);letter-spacing:.18em;opacity:.85;margin-top:6px}
+.top .stt{font-size:11px;letter-spacing:.35em;margin-top:6px;opacity:.9}
+.top .cnt{font-size:10px;letter-spacing:.18em;opacity:.55;margin-top:5px}
+
+/* ----- griglia ----- */
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) minmax(340px,1.25fr) minmax(270px,1fr);gap:14px;padding:10px 16px 14px}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto;scrollbar-width:none}
+.col::-webkit-scrollbar{display:none}
+.col>*{flex:none}
+.panel{position:relative;border:1px solid var(--dim);padding:13px 14px;display:flex;flex-direction:column;gap:10px;
+  background:
+  linear-gradient(var(--c),var(--c)) 0 0/16px 2px no-repeat,linear-gradient(var(--c),var(--c)) 0 0/2px 16px no-repeat,
+  linear-gradient(var(--c),var(--c)) 100% 0/16px 2px no-repeat,linear-gradient(var(--c),var(--c)) 100% 0/2px 16px no-repeat,
+  linear-gradient(var(--c),var(--c)) 0 100%/16px 2px no-repeat,linear-gradient(var(--c),var(--c)) 0 100%/2px 16px no-repeat,
+  linear-gradient(var(--c),var(--c)) 100% 100%/16px 2px no-repeat,linear-gradient(var(--c),var(--c)) 100% 100%/2px 16px no-repeat,
+  rgba(2,8,12,.78)}
+.panel h2{font-size:10px;letter-spacing:.28em;font-weight:400;opacity:.75;display:flex;justify-content:space-between;gap:8px}
+.panel h2 span{opacity:.7;letter-spacing:.12em}
+.empty{font-size:11px;opacity:.55;line-height:1.5}
+
+/* ----- meteo ----- */
+.mnow{display:flex;align-items:center;gap:14px}
+.mi{font-size:46px;line-height:1;text-shadow:0 0 14px var(--c)}
+.mt{font-family:var(--sans);font-weight:200;font-size:38px;letter-spacing:.04em;line-height:1}
+.mc{font-size:11px;opacity:.85;margin-top:4px}
+.mgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mgrid div,.stats div{border:1px solid var(--dim);padding:6px 4px;text-align:center}
+.mgrid b{display:block;font-size:13px;margin-bottom:2px;letter-spacing:.03em}
+.mgrid span,.stats span{font-size:8px;letter-spacing:.12em;opacity:.65}
+.hours{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center;font-size:10px}
+.hours div{display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--dim);padding-top:5px}
+.hours i{font-style:normal;font-size:15px}
+.days{display:flex;flex-direction:column;font-size:11px}
+.days div{display:grid;grid-template-columns:62px 22px 1fr auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid var(--dim)}
+.days div:last-child{border:0}
+.days small{opacity:.6;font-size:10px}
+.btn{background:transparent;color:var(--c);border:1px solid var(--c);padding:10px 8px;font:inherit;font-size:11px;letter-spacing:.12em;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .btn:active{background:var(--dim)}
-.row{display:flex;justify-content:space-between;font-size:12px}
-.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.mem{display:flex;flex-direction:column;gap:10px}
-.mem canvas{width:100%;height:105px;display:block;border:1px solid var(--dim);background:rgba(25,227,240,.03)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.stats div{border:1px solid var(--dim);padding:6px 2px;text-align:center}
-.stats b{display:block;font-size:16px;margin-bottom:2px}
-.stats span{font-size:7.5px;letter-spacing:.05em;opacity:.7}
-#ult{font-size:11px;line-height:1.5;opacity:.85;max-height:34px;overflow:hidden}
-.sal{display:flex;flex-direction:column;gap:9px}
-.sal .r1{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em}
-.sal .r1 b{font-size:14px}
-.sal .bars{display:flex;gap:3px;align-items:flex-end;height:26px}
-.sal .bars i{flex:1;min-height:2px;opacity:.85}
-.sal .agg{font-size:9px;opacity:.6;letter-spacing:.08em}
-.agq{font-size:11px;line-height:1.55;max-height:150px;overflow-y:auto}
-.agq div{padding:2px 0;border-bottom:1px solid var(--dim)}
-.meteo-main{display:flex;align-items:center;gap:14px}
-.mi{font-size:42px;line-height:1}
-.mt{font-size:28px;letter-spacing:.05em}
-.mc{font-size:11px;opacity:.8;margin-top:2px}
-.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;min-height:0}
-.orb{position:relative;width:min(54vmin,420px);aspect-ratio:1;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ring{position:absolute;border-radius:50%}
-.r1{inset:0;border:1px dashed var(--dim);animation:spin 50s linear infinite}
-.r2{inset:8%;border:2px solid transparent;border-top-color:var(--c);border-bottom-color:var(--c);animation:spin calc(var(--v)*1s) linear infinite reverse}
-.r3{inset:17%;border:1px solid var(--dim);background:conic-gradient(from 0deg,transparent 0 78%,var(--dim) 100%);animation:spin calc(var(--v)*.6s) linear infinite}
-.r4{inset:29%;border:1px solid var(--c);box-shadow:0 0 28px var(--dim),inset 0 0 28px var(--dim);animation:pulse 3s ease-in-out infinite}
-.core{position:relative;z-index:2;width:30%;aspect-ratio:1;border-radius:50%;border:2px solid var(--c);display:grid;place-items:center;text-align:center;font-size:clamp(9px,1.7vmin,13px);letter-spacing:.14em;line-height:1.5;background:radial-gradient(circle,var(--dim),transparent 72%)}
-.wave{display:flex;gap:3px;align-items:center;height:34px}
-.wave span{width:3px;height:30px;background:var(--c);transform:scaleY(.15);animation:wv 1s ease-in-out infinite;animation-play-state:paused}
-body[data-s=listening] .wave span,body[data-s=speaking] .wave span,body[data-s=thinking] .wave span{animation-play-state:running}
-#log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:12px;line-height:1.5}
-#log .tu{opacity:.65}
+.btn.sm{padding:8px 6px;font-size:10px;border-color:var(--dim)}
+
+/* ----- salute ----- */
+.sal2{display:flex;flex-direction:column;gap:10px}
+.sal2 .r1{display:flex;justify-content:space-between;align-items:baseline;font-size:10px;letter-spacing:.14em}
+.sal2 .r1 b{font-family:var(--sans);font-weight:300;font-size:22px;letter-spacing:.02em}
+.bars{display:flex;gap:4px;align-items:flex-end;height:28px;margin-top:4px}
+.bars i{flex:1;min-height:2px;opacity:.9}
+.agg{font-size:9px;opacity:.55;letter-spacing:.1em}
+
+/* ----- sistema ----- */
+.srv{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;font-size:10px;letter-spacing:.1em}
+.srv div{display:flex;align-items:center;gap:7px}
+.srv i{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:none}
+.srv i.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.srv i.ko{background:var(--bad);box-shadow:0 0 8px var(--bad)}
+.srv i.wa{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+
+/* ----- eventi ----- */
+.ev{display:flex;flex-direction:column}
+.ev div{display:grid;grid-template-columns:78px 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--dim);font-size:12px;line-height:1.35}
+.ev div:last-child{border:0}
+.ev .o{font-size:11px;opacity:.8}
+.ev .p{opacity:.35}
+.ev small{display:block;font-size:9.5px;opacity:.55;margin-top:1px}
+.ev.next div{grid-template-columns:96px 1fr;font-size:11px}
+
+/* ----- memoria ----- */
+.mem canvas{width:100%;height:112px;display:block;border:1px solid var(--dim);background:var(--soft)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.stats b{display:block;font-size:15px;margin-bottom:2px}
+#ult{font-size:11px;line-height:1.5;opacity:.85;max-height:50px;overflow:hidden;margin-top:6px}
+
+/* ----- centro ----- */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;min-height:0;overflow-y:auto;scrollbar-width:none}
+.center::-webkit-scrollbar{display:none}
+#orbc{width:min(100%,44vh);aspect-ratio:1;flex:none;cursor:pointer;-webkit-tap-highlight-color:transparent;display:block}
+#cap{font-size:12px;line-height:1.55;text-align:center;opacity:.9;min-height:3.1em;max-width:520px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:.03em}
+.inrow{display:flex;gap:8px;width:100%;max-width:560px}
+.inrow input{flex:1;min-width:0;background:rgba(2,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
+.inrow input:focus{border-color:var(--c)}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:560px}
+.btns .big{padding:13px 8px}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:560px}
+#log{display:flex;flex-direction:column;gap:9px;font-size:12px;line-height:1.5;max-height:34vh;overflow-y:auto}
+#log .tu{opacity:.6}
 #log .tu::before{content:"> "}
-#log .sys{color:#ffb62e}
-#log .mem{color:#4dffb0}
-footer{display:flex;gap:8px;padding:10px 16px 14px}
-footer input{flex:1;background:rgba(3,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
-footer input:focus{border-color:var(--c)}
-#boot{position:fixed;inset:0;background:#03080c;z-index:9;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;font-size:12px;letter-spacing:.2em;transition:opacity .8s}
-#boot .bar{width:min(70vw,360px);height:4px;background:var(--dim)}
-#boot .bar i{display:block;height:100%;width:0;background:var(--c);transition:width 2.2s ease-out}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{50%{transform:scale(1.04);opacity:.7}}
-@keyframes wv{50%{transform:scaleY(1)}}
-@media(max-width:820px){
-  main{grid-template-columns:1fr;overflow-y:auto;gap:12px;padding:10px;align-content:start}
-  .center{order:1}
-  #left{order:2;overflow:visible}
-  .logp{order:3;min-height:260px}
-  .orb{width:min(60vw,270px)}
-  .mem canvas{height:120px}
-  header small{display:none}
+#log .sys{color:var(--warn)}
+#log .mem{color:var(--ok)}
+
+/* ----- avvio ----- */
+#boot{position:fixed;inset:0;background:#020609;z-index:20;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:14px;transition:opacity 1s;padding:20px}
+#boot .bt{font-family:var(--sans);font-weight:200;font-size:clamp(26px,6vw,52px);letter-spacing:.5em;padding-left:.5em;text-shadow:0 0 22px var(--c)}
+#bTap{margin-top:14px;padding:16px 26px;font-size:13px;letter-spacing:.3em;animation:blink 1.6s ease-in-out infinite}
+#bl{min-height:150px;font-size:12px;letter-spacing:.2em;display:flex;flex-direction:column;gap:7px;align-items:center;text-align:center}
+#bl div{opacity:0;animation:in .5s forwards}
+#bl b{color:var(--ok);font-weight:400}
+#boot .bar{width:min(70vw,360px);height:3px;background:var(--dim);display:none}
+#boot .bar i{display:block;height:100%;width:0;background:var(--c);box-shadow:0 0 10px var(--c);transition:width 1.2s ease-out}
+
+@keyframes blink{50%{opacity:.35}}
+@keyframes in{to{opacity:1}}
+
+@media(max-width:999px){
+  body{overflow-y:auto;height:auto;min-height:100dvh}
+  main{display:flex;flex-direction:column;overflow:visible;padding:8px 12px 24px}
+  .center{order:1;overflow:visible}
+  #col1{order:2;overflow:visible}
+  #col2{order:3;overflow:visible}
+  #orbc{width:min(100%,62vw,420px)}
+  #log{max-height:none}
+  .top .cnt{display:none}
+}
+@media(min-width:640px) and (max-width:999px){
+  #col1,#col2{display:grid;grid-template-columns:1fr 1fr;align-items:start}
 }
 </style>
 </head>
 <body data-s="idle">
-<div id="boot"><div>INIZIALIZZAZIONE SISTEMA...</div><div class="bar"><i id="bi"></i></div></div>
 
-<header>
-  <div><h1>JARVIS</h1><small>JUST A RATHER VERY INTELLIGENT SYSTEM</small></div>
-  <div class="st">STATO<b id="stato">IN ATTESA</b></div>
-  <div class="st">ORA<b id="ora">--:--:--</b></div>
-</header>
+<div id="boot">
+  <div class="bt">J.A.R.V.I.S.</div>
+  <button class="btn" id="bTap">TOCCA PER AVVIARE</button>
+  <div id="bl"></div>
+  <div class="bar"><i id="bi"></i></div>
+</div>
+
+<div class="top">
+  <h1>J.A.R.V.I.S.</h1>
+  <div class="sal" id="saluto">Buongiorno, Stefano</div>
+  <div class="stt" id="stato">STANDBY</div>
+  <div class="cnt" id="cnt">NEURONI 0 &middot; SINAPSI 0 &middot; CONVERSAZIONI 0</div>
+</div>
 
 <main>
-  <div id="left">
-    <section class="panel">
-      <h2>SISTEMA //</h2>
-      <div class="row"><span>COLLEGAMENTO</span><span id="link">NON CONFIGURATO</span></div>
-      <div class="tools">
-        <button class="btn" id="bRes">RESOCONTO</button>
-        <button class="btn" id="bVoce">PROVA VOCE</button>
-        <button class="btn" id="bCfg">IMPOSTAZIONI</button>
-        <button class="btn" id="bStop">ZITTISCI</button>
+  <div class="col" id="col1">
+    <section class="panel" id="meteo">
+      <h2>METEO <span id="citta">--</span></h2>
+      <div class="mnow">
+        <div class="mi" id="mIcona">&#9729;</div>
+        <div><div class="mt" id="mTemp">--&deg;</div><div class="mc" id="mCond">In attesa dati...</div></div>
       </div>
-      <div class="mem">
-        <h2>MEMORIA // RETE NEURALE</h2>
+      <div class="mgrid">
+        <div><b id="mMin">--</b><span>MINIMA</span></div>
+        <div><b id="mMax">--</b><span>MASSIMA</span></div>
+        <div><b id="mPerc">--</b><span>PERCEPITA</span></div>
+        <div><b id="mPioggia">--</b><span>PIOGGIA</span></div>
+        <div><b id="mUmid">--</b><span>UMIDIT&Agrave;</span></div>
+        <div><b id="mVento">--</b><span>VENTO</span></div>
+        <div><b id="mAlba">--</b><span>ALBA</span></div>
+        <div><b id="mTram">--</b><span>TRAMONTO</span></div>
+        <div><b id="mDomani">--</b><span>DOMANI</span></div>
+      </div>
+      <div class="hours" id="ore"></div>
+      <div class="days" id="giorni"></div>
+      <button class="btn sm" id="bCitta">CAMBIA CITT&Agrave;</button>
+    </section>
+
+    <section class="panel" id="saluteP">
+      <h2>SALUTE <span>ULTIMI 7 GIORNI</span></h2>
+      <div class="sal2" id="salute"><div class="empty">In attesa dei dati dal Comando Rapido sull'iPhone.</div></div>
+    </section>
+  </div>
+
+  <section class="center">
+    <canvas id="orbc"></canvas>
+    <div id="cap">Tocca la sfera e parlami, oppure scrivi qui sotto.</div>
+    <div class="inrow">
+      <input id="txt" placeholder="Scrivi a Jarvis..." autocomplete="off">
+    </div>
+    <div class="btns">
+      <button class="btn big" id="bVoce">VOCE</button>
+      <button class="btn big" id="bParla">PARLA</button>
+      <button class="btn big" id="bSend">INVIA</button>
+    </div>
+    <div class="tools">
+      <button class="btn sm" id="bRes">RESOCONTO</button>
+      <button class="btn sm" id="bCfg">IMPOSTAZIONI</button>
+      <button class="btn sm" id="bStop">ZITTISCI</button>
+    </div>
+  </section>
+
+  <div class="col" id="col2">
+    <section class="panel" id="agendaP">
+      <h2>EVENTI DI OGGI <span id="dataOggi">--</span></h2>
+      <div class="ev" id="evOggi"><div class="empty" style="display:block">In attesa dei dati del calendario.</div></div>
+      <h2 style="margin-top:4px">PROSSIMI GIORNI</h2>
+      <div class="ev next" id="evNext"></div>
+      <div class="agg" id="agAgg"></div>
+    </section>
+
+    <section class="panel">
+      <h2>SISTEMA</h2>
+      <div class="srv" id="srv">
+        <div><i id="s_cervello"></i>CERVELLO</div>
+        <div><i id="s_memoria"></i>MEMORIA</div>
+        <div><i id="s_meteo"></i>METEO</div>
+        <div><i id="s_agenda"></i>CALENDARIO</div>
+        <div><i id="s_salute"></i>SALUTE</div>
+        <div><i id="s_voce"></i>VOCE GEMINI</div>
+      </div>
+    </section>
+
+    <section class="panel mem">
+      <h2>MEMORIA <span>RETE NEURALE</span></h2>
+      <div>
         <canvas id="rete"></canvas>
         <div class="stats">
           <div><b id="nR">0</b><span>NEURONI</span></div>
@@ -121,61 +242,30 @@ footer input:focus{border-color:var(--c)}
       </div>
     </section>
 
-    <section class="panel" id="meteo">
-      <h2>METEO // <span id="citta">--</span></h2>
-      <div class="meteo-main">
-        <div class="mi" id="mIcona">&#9729;</div>
-        <div><div class="mt" id="mTemp">--&deg;C</div><div class="mc" id="mCond">In attesa dati...</div></div>
-      </div>
-      <div class="row"><span>MIN <b id="mMin">--&deg;</b></span><span>MAX <b id="mMax">--&deg;</b></span></div>
-      <div class="row"><span>DOMANI</span><b id="mDomani" style="text-align:right">--</b></div>
-      <button class="btn" id="bCitta">CAMBIA CITT&Agrave;</button>
-    </section>
-
-    <section class="panel" id="saluteP">
-      <h2>SALUTE // ULTIMI 7 GIORNI</h2>
-      <div class="sal" id="salute">In attesa dei dati dal Comando Rapido.</div>
-    </section>
-
-    <section class="panel" id="agendaP">
-      <h2>AGENDA // PROSSIMI GIORNI</h2>
-      <div class="agq" id="agenda">In attesa dei dati dal Comando Rapido.</div>
+    <section class="panel logp">
+      <h2>CONVERSAZIONE</h2>
+      <div id="log"></div>
     </section>
   </div>
-
-  <section class="center">
-    <div class="orb" id="orb">
-      <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="ring r4"></div>
-      <div class="core" id="core">TOCCA<br>PER PARLARE</div>
-    </div>
-    <div class="wave" id="wave"></div>
-  </section>
-
-  <section class="panel logp">
-    <h2>CONVERSAZIONE //</h2>
-    <div id="log"></div>
-  </section>
 </main>
-
-<footer>
-  <input id="txt" placeholder="Oppure scrivi qui..." autocomplete="off">
-  <button class="btn" id="bSend">INVIA</button>
-</footer>
 
 <script>
 const $ = s => document.querySelector(s);
 const get = k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
 const put = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 let cfg = { url: get('j_url'), code: get('j_code') };
 let storia = [];
 let recenti = [];
 
-const NOMI = { idle: 'IN ATTESA', listening: 'TI ASCOLTO', thinking: 'ELABORO', speaking: 'PARLO' };
-const CORE = { idle: 'TOCCA<br>PER PARLARE', listening: 'ASCOLTO...', thinking: 'ELABORO...', speaking: 'JARVIS<br>PARLA' };
+/* ---------- STATO ---------- */
+const NOMI = { idle: 'STANDBY', listening: 'TI ASCOLTO', thinking: 'ELABORAZIONE', speaking: 'RISPOSTA' };
+const COLORI = { idle: '#19e3f0', listening: '#4dffb0', thinking: '#ffb62e', speaking: '#19e3f0' };
+let COL = COLORI.idle;
 function setState(s) {
   document.body.dataset.s = s;
+  COL = COLORI[s];
   $('#stato').textContent = NOMI[s];
-  $('#core').innerHTML = CORE[s];
 }
 function log(chi, testo) {
   const d = document.createElement('div');
@@ -183,21 +273,114 @@ function log(chi, testo) {
   d.textContent = testo;
   $('#log').appendChild(d);
   $('#log').scrollTop = $('#log').scrollHeight;
-  d.scrollIntoView({ block: 'nearest' });
+  if (chi === 'jarvis') $('#cap').textContent = testo;
 }
-function aggiornaLink() { $('#link').textContent = (cfg.url && cfg.code) ? 'ONLINE' : 'NON CONFIGURATO'; }
+function srv(nome, stato) { const e = $('#s_' + nome); if (e) e.className = stato; }
+function aggiornaLink() { srv('cervello', (cfg.url && cfg.code) ? 'ok' : 'ko'); }
+function saluto() {
+  const h = new Date().getHours();
+  return h < 13 ? 'Buongiorno' : h < 18 ? 'Buon pomeriggio' : 'Buonasera';
+}
+function aggiornaTesta() {
+  $('#saluto').textContent = saluto() + ', Stefano';
+  $('#dataOggi').textContent = new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+}
+aggiornaTesta();
+setInterval(aggiornaTesta, 60000);
 
-for (let i = 0; i < 28; i++) {
-  const s = document.createElement('span');
-  s.style.animationDelay = (Math.random() * -1).toFixed(2) + 's';
-  s.style.animationDuration = (0.5 + Math.random() * 0.8).toFixed(2) + 's';
-  $('#wave').appendChild(s);
+/* ---------- SFERA ---------- */
+const oc = $('#orbc'), ox = oc.getContext('2d');
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
 }
-setInterval(() => { $('#ora').textContent = new Date().toLocaleTimeString('it-IT'); }, 1000);
+const NP = 150;
+const pts = [];
+for (let i = 0; i < NP; i++) {
+  const y = 1 - (i / (NP - 1)) * 2, r = Math.sqrt(1 - y * y), a = i * 2.399963;
+  pts.push([Math.cos(a) * r, y, Math.sin(a) * r]);
+}
+const sci = [...Array(46)].map(() => ({ a: Math.random() * 6.283, r: 0.55 + Math.random() * 0.43, v: (0.15 + Math.random() * 0.5) * (Math.random() < 0.5 ? -1 : 1), z: Math.random() }));
+let rotA = 0, rotArc = 0, lastT = 0;
+function disegnaOrb(t) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = oc.clientWidth;
+  if (w) {
+    if (oc.width !== Math.round(w * dpr)) { oc.width = Math.round(w * dpr); oc.height = Math.round(w * dpr); }
+    ox.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ox.clearRect(0, 0, w, w);
+    const dt = Math.min(0.05, (t - lastT) / 1000 || 0.016); lastT = t;
+    const s = document.body.dataset.s;
+    const vel = s === 'idle' ? 1 : s === 'listening' ? 1.8 : s === 'thinking' ? 3.4 : 2.2;
+    const pul = s === 'speaking' ? 1 + 0.07 * Math.sin(t / 95) * Math.sin(t / 310) + 0.03 * Math.sin(t / 47)
+      : s === 'listening' ? 1 + 0.035 * Math.sin(t / 220) : 1 + 0.015 * Math.sin(t / 900);
+    rotA += dt * 0.35 * vel; rotArc += dt * vel;
+    const c = w / 2, R = w / 2 * 0.97;
+    // alone
+    let g = ox.createRadialGradient(c, c, 0, c, c, R * 0.85);
+    g.addColorStop(0, rgba(COL, 0.34 * pul)); g.addColorStop(0.45, rgba(COL, 0.12)); g.addColorStop(1, rgba(COL, 0));
+    ox.fillStyle = g; ox.beginPath(); ox.arc(c, c, R, 0, 6.283); ox.fill();
+    // anello di tacche
+    ox.strokeStyle = rgba(COL, 0.55);
+    for (let i = 0; i < 120; i++) {
+      const a = i / 120 * 6.283 + rotArc * 0.05, l = i % 10 === 0 ? 0.045 : 0.02;
+      ox.lineWidth = i % 10 === 0 ? 2 : 1;
+      ox.beginPath();
+      ox.moveTo(c + Math.cos(a) * R, c + Math.sin(a) * R);
+      ox.lineTo(c + Math.cos(a) * R * (1 - l), c + Math.sin(a) * R * (1 - l));
+      ox.stroke();
+    }
+    // archi rotanti
+    const archi = [[0.88, 3, 0.9, 0.55, 1], [0.8, 2, 1.3, 0.8, -1.6], [0.72, 4, 0.6, 0.9, 2.3], [0.64, 1.5, 2.2, 0.5, -0.8]];
+    archi.forEach(([r, lw, len, al, sp], k) => {
+      ox.lineWidth = lw; ox.strokeStyle = rgba(COL, al);
+      for (let j = 0; j < 2; j++) {
+        const a0 = rotArc * sp * 0.6 + j * 3.1416 + k;
+        ox.beginPath(); ox.arc(c, c, R * r, a0, a0 + len); ox.stroke();
+      }
+    });
+    ox.lineWidth = 1; ox.strokeStyle = rgba(COL, 0.25);
+    ox.beginPath(); ox.arc(c, c, R * 0.94, 0, 6.283); ox.stroke();
+    ox.beginPath(); ox.arc(c, c, R * 0.58, 0, 6.283); ox.stroke();
+    // sfera a punti
+    const rs = R * 0.46 * pul, ca = Math.cos(rotA), sa = Math.sin(rotA), tilt = 0.45, ct = Math.cos(tilt), st = Math.sin(tilt);
+    const P = pts.map(p => {
+      const x = p[0] * ca + p[2] * sa, z0 = -p[0] * sa + p[2] * ca;
+      const y = p[1] * ct - z0 * st, z = p[1] * st + z0 * ct;
+      return [c + x * rs, c + y * rs, z];
+    });
+    ox.lineWidth = 0.7;
+    const lim = rs * 0.36;
+    for (let i = 0; i < NP; i++) for (let j = i + 1; j < NP; j++) {
+      const dx = P[i][0] - P[j][0], dy = P[i][1] - P[j][1], d = dx * dx + dy * dy;
+      if (d < lim * lim) {
+        ox.strokeStyle = rgba(COL, 0.5 * (1 - Math.sqrt(d) / lim) * (0.4 + 0.6 * (P[i][2] + 1) / 2));
+        ox.beginPath(); ox.moveTo(P[i][0], P[i][1]); ox.lineTo(P[j][0], P[j][1]); ox.stroke();
+      }
+    }
+    P.forEach(p => {
+      ox.fillStyle = rgba(COL, 0.35 + 0.65 * (p[2] + 1) / 2);
+      ox.beginPath(); ox.arc(p[0], p[1], 1 + 1.3 * (p[2] + 1) / 2, 0, 6.283); ox.fill();
+    });
+    // nucleo
+    g = ox.createRadialGradient(c, c, 0, c, c, rs * 0.35);
+    g.addColorStop(0, rgba(COL, 0.9)); g.addColorStop(1, rgba(COL, 0));
+    ox.fillStyle = g; ox.beginPath(); ox.arc(c, c, rs * 0.35, 0, 6.283); ox.fill();
+    // particelle orbitanti
+    sci.forEach(p => {
+      p.a += dt * p.v * vel;
+      const x = c + Math.cos(p.a) * R * p.r, y = c + Math.sin(p.a) * R * p.r;
+      ox.fillStyle = rgba(COL, 0.25 + 0.6 * p.z);
+      ox.beginPath(); ox.arc(x, y, 0.8 + p.z * 1.6, 0, 6.283); ox.fill();
+    });
+  }
+  requestAnimationFrame(disegnaOrb);
+}
+requestAnimationFrame(disegnaOrb);
 
 /* ---------- RETE NEURALE ---------- */
 const cv = $('#rete'), cx = cv.getContext('2d');
-let nodi = [], archi = [];
+let nodi = [], archiN = [];
 function rnd(i) {
   let t = (i + 1) * 0x6D2B79F5;
   t = Math.imul(t ^ t >>> 15, t | 1);
@@ -205,7 +388,7 @@ function rnd(i) {
   return ((t ^ t >>> 14) >>> 0) / 4294967296;
 }
 function costruisci(n) {
-  nodi = []; archi = [];
+  nodi = []; archiN = [];
   const N = Math.min(n, 150) + 1;
   for (let i = 0; i < N; i++) {
     if (i === 0) { nodi.push({ x: 0.5, y: 0.5, f: 0, nuovo: 0 }); continue; }
@@ -216,7 +399,7 @@ function costruisci(n) {
     const d = [];
     for (let j = 0; j < i; j++) d.push([j, (nodi[i].x - nodi[j].x) ** 2 + (nodi[i].y - nodi[j].y) ** 2]);
     d.sort((p, q) => p[1] - q[1]);
-    d.slice(0, 2).forEach(x => archi.push([i, x[0]]));
+    d.slice(0, 2).forEach(x => archiN.push([i, x[0]]));
   }
 }
 function disegna(t) {
@@ -225,11 +408,10 @@ function disegna(t) {
   if (w && cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
   cx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cx.clearRect(0, 0, w, h);
-  const col = getComputedStyle(document.body).getPropertyValue('--c').trim() || '#19e3f0';
-  cx.strokeStyle = col; cx.fillStyle = col; cx.lineWidth = 1;
+  cx.strokeStyle = COL; cx.fillStyle = COL; cx.lineWidth = 1;
   const P = n => [(n.x + Math.sin(t / 2500 + n.f) * 0.012) * w, (n.y + Math.cos(t / 2900 + n.f) * 0.012) * h];
   cx.globalAlpha = 0.28;
-  archi.forEach(([a, b]) => {
+  archiN.forEach(([a, b]) => {
     const A = P(nodi[a]), B = P(nodi[b]);
     cx.beginPath(); cx.moveTo(A[0], A[1]); cx.lineTo(B[0], B[1]); cx.stroke();
   });
@@ -251,7 +433,8 @@ function aggiornaStats(st, nuovi) {
   $('#nC').textContent = st.conversazioni;
   $('#nG').textContent = st.giorni;
   costruisci(st.ricordi);
-  $('#nS').textContent = archi.length;
+  $('#nS').textContent = archiN.length;
+  $('#cnt').textContent = 'NEURONI ' + st.ricordi + ' · SINAPSI ' + archiN.length + ' · CONVERSAZIONI ' + st.conversazioni;
   (nuovi || []).forEach((_, k) => { const n = nodi[nodi.length - 1 - k]; if (n && n !== nodi[0]) n.nuovo = 1; });
 }
 function mostraRecenti() {
@@ -267,7 +450,7 @@ requestAnimationFrame(disegna);
 
 /* ---------- METEO ---------- */
 const WMO = {
-  0: ['Sereno', '☀'], 1: ['Prevalentemente sereno', '☀'], 2: ['Parzialmente nuvoloso', '☁'], 3: ['Coperto', '☁'],
+  0: ['Sereno', '☀'], 1: ['Prevalentemente sereno', '☀'], 2: ['Parzialmente nuvoloso', '⛅'], 3: ['Coperto', '☁'],
   45: ['Nebbia', '≋'], 48: ['Nebbia con brina', '≋'],
   51: ['Pioggerella leggera', '☂'], 53: ['Pioggerella', '☂'], 55: ['Pioggerella intensa', '☂'],
   56: ['Pioggerella gelata', '☂'], 57: ['Pioggerella gelata intensa', '☂'],
@@ -279,6 +462,7 @@ const WMO = {
   95: ['Temporale', '⚡'], 96: ['Temporale con grandine', '⚡'], 99: ['Forte temporale con grandine', '⚡']
 };
 let meteoTesto = '';
+let meteoOra = null;
 function trovaPosizione() {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
@@ -293,6 +477,7 @@ function trovaPosizione() {
     }, () => res(null), { timeout: 10000, maximumAge: 600000 });
   });
 }
+const r0 = v => Math.round(v);
 async function caricaMeteo() {
   let pos = null;
   try { pos = JSON.parse(get('j_pos') || 'null'); } catch (e) {}
@@ -300,32 +485,76 @@ async function caricaMeteo() {
     const nuova = await trovaPosizione();
     if (nuova) { pos = nuova; put('j_pos', JSON.stringify(pos)); }
   }
-  if (!pos) { $('#mCond').textContent = 'Posizione non disponibile: tocca CAMBIA CITTÀ.'; return; }
-  $('#citta').textContent = (pos.nome || 'LA TUA POSIZIONE').toUpperCase();
+  if (!pos) { $('#mCond').textContent = 'Posizione non disponibile: tocca CAMBIA CITTÀ.'; srv('meteo', 'ko'); return; }
+  const nomeCitta = pos.nome || 'La tua posizione';
+  $('#citta').textContent = nomeCitta.toUpperCase();
   try {
     const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + pos.lat + '&longitude=' + pos.lon +
-      '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=7');
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code' +
+      '&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset' +
+      '&timezone=auto&forecast_days=7');
     const j = await r.json();
-    const w = WMO[j.current.weather_code] || ['Condizioni non disponibili', '☁'];
+    const cur = j.current, d = j.daily;
+    const w = WMO[cur.weather_code] || ['Condizioni non disponibili', '☁'];
     $('#mIcona').textContent = w[1];
     $('#mCond').textContent = w[0];
-    $('#mTemp').textContent = Math.round(j.current.temperature_2m) + '°C';
-    const d = j.daily;
-    $('#mMin').textContent = Math.round(d.temperature_2m_min[0]) + '°';
-    $('#mMax').textContent = Math.round(d.temperature_2m_max[0]) + '°';
+    $('#mTemp').textContent = r0(cur.temperature_2m) + '°C';
+    $('#mMin').textContent = r0(d.temperature_2m_min[0]) + '°';
+    $('#mMax').textContent = r0(d.temperature_2m_max[0]) + '°';
+    $('#mPerc').textContent = r0(cur.apparent_temperature) + '°';
+    const pioggia = d.precipitation_probability_max ? d.precipitation_probability_max[0] : null;
+    $('#mPioggia').textContent = pioggia != null ? pioggia + '%' : '--';
+    $('#mUmid').textContent = r0(cur.relative_humidity_2m) + '%';
+    $('#mVento').textContent = r0(cur.wind_speed_10m) + ' km/h';
+    $('#mAlba').textContent = (d.sunrise[0] || '').slice(11, 16) || '--';
+    $('#mTram').textContent = (d.sunset[0] || '').slice(11, 16) || '--';
     const dom = WMO[d.weather_code[1]] || ['--', '☁'];
-    $('#mDomani').textContent = dom[0] + ' ' + Math.round(d.temperature_2m_min[1]) + '°/' + Math.round(d.temperature_2m_max[1]) + '°';
-    const giorni = d.time.map((dt, i) => {
+    $('#mDomani').textContent = dom[1] + ' ' + r0(d.temperature_2m_min[1]) + '/' + r0(d.temperature_2m_max[1]);
+    // prossime ore
+    const ore = $('#ore');
+    ore.innerHTML = '';
+    const adesso = (cur.time || '').slice(0, 13) + ':00';
+    let i0 = j.hourly.time.findIndex(t => t >= adesso);
+    if (i0 < 0) i0 = 0;
+    for (let k = 0; k < 6; k++) {
+      const i = i0 + k * 2;
+      if (i >= j.hourly.time.length) break;
+      const el = document.createElement('div');
+      const a = document.createElement('span'); a.textContent = k === 0 ? 'ORA' : j.hourly.time[i].slice(11, 16);
+      const ic = document.createElement('i'); ic.textContent = (WMO[j.hourly.weather_code[i]] || ['', '☁'])[1];
+      const b = document.createElement('b'); b.textContent = r0(j.hourly.temperature_2m[i]) + '°';
+      el.appendChild(a); el.appendChild(ic); el.appendChild(b);
+      ore.appendChild(el);
+    }
+    // prossimi giorni
+    const gg = $('#giorni');
+    gg.innerHTML = '';
+    for (let i = 1; i < 5 && i < d.time.length; i++) {
+      const el = document.createElement('div');
+      const nome = i === 1 ? 'Domani' : new Date(d.time[i] + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric' });
+      const wc = WMO[d.weather_code[i]] || ['--', '☁'];
+      const a = document.createElement('span'); a.textContent = nome;
+      const ic = document.createElement('span'); ic.textContent = wc[1];
+      const cd = document.createElement('small'); cd.textContent = wc[0];
+      const mm = document.createElement('b'); mm.textContent = r0(d.temperature_2m_min[i]) + '° / ' + r0(d.temperature_2m_max[i]) + '°';
+      el.appendChild(a); el.appendChild(ic); el.appendChild(cd); el.appendChild(mm);
+      gg.appendChild(el);
+    }
+    const giorniTxt = d.time.map((dt, i) => {
       const nome = i === 0 ? 'Oggi' : i === 1 ? 'Domani' : new Date(dt + 'T12:00:00').toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
       const cond = (WMO[d.weather_code[i]] || ['condizioni non disponibili'])[0];
-      const pioggia = d.precipitation_probability_max ? d.precipitation_probability_max[i] : '?';
-      return nome + ': ' + cond + ', minima ' + Math.round(d.temperature_2m_min[i]) + ' gradi, massima ' +
-        Math.round(d.temperature_2m_max[i]) + ' gradi, probabilità di pioggia ' + pioggia + '%';
+      const p = d.precipitation_probability_max ? d.precipitation_probability_max[i] : '?';
+      return nome + ': ' + cond + ', minima ' + r0(d.temperature_2m_min[i]) + ' gradi, massima ' +
+        r0(d.temperature_2m_max[i]) + ' gradi, probabilità di pioggia ' + p + '%';
     });
     meteoTesto = 'Previsioni meteo reali per ' + (pos.nome || "la posizione dell'utente") + ' (fonte Open-Meteo). Adesso: ' +
-      Math.round(j.current.temperature_2m) + ' gradi, ' + w[0] + '. ' + giorni.join('. ') + '.';
+      r0(cur.temperature_2m) + ' gradi (percepiti ' + r0(cur.apparent_temperature) + '), ' + w[0] + ', umidità ' + r0(cur.relative_humidity_2m) +
+      '%, vento ' + r0(cur.wind_speed_10m) + ' km/h. ' + giorniTxt.join('. ') + '.';
+    meteoOra = { citta: nomeCitta, temp: r0(cur.temperature_2m), cond: w[0], min: r0(d.temperature_2m_min[0]), max: r0(d.temperature_2m_max[0]), pioggia: pioggia, vento: r0(cur.wind_speed_10m) };
+    srv('meteo', 'ok');
   } catch (e) {
     $('#mCond').textContent = 'Meteo non raggiungibile';
+    srv('meteo', 'ko');
   }
 }
 async function cambiaCitta() {
@@ -353,7 +582,7 @@ let saluteDati = {};
 const RIGHE_SALUTE = [
   ['PASSI', 'passi', v => Number(v).toLocaleString('it-IT'), v => v >= 8000 ? '#4dffb0' : v >= 4000 ? '#ffb62e' : '#ff5a5a', 12000],
   ['SONNO', 'sonno', v => String(v).replace('.', ',') + ' h', v => v >= 7 ? '#4dffb0' : v >= 6 ? '#ffb62e' : '#ff5a5a', 10],
-  ['FC A RIPOSO', 'fc', v => v + ' bpm', () => 'var(--c)', 100]
+  ['FC A RIPOSO', 'fc', v => v + ' bpm', () => '#19e3f0', 100]
 ];
 function renderSalute(s) {
   if (!s) return;
@@ -361,7 +590,8 @@ function renderSalute(s) {
   const el = $('#salute');
   const giorni = Object.keys(s).sort().slice(-7);
   el.innerHTML = '';
-  if (!giorni.length) { el.textContent = 'In attesa dei dati dal Comando Rapido.'; return; }
+  if (!giorni.length) { el.innerHTML = '<div class="empty">In attesa dei dati dal Comando Rapido sull\'iPhone.</div>'; srv('salute', 'wa'); return; }
+  srv('salute', 'ok');
   const ultimo = s[giorni[giorni.length - 1]];
   RIGHE_SALUTE.forEach(([nome, k, fmt, col, max]) => {
     const riga = document.createElement('div');
@@ -405,20 +635,66 @@ function saluteTestoPerJarvis() {
 
 /* ---------- AGENDA ---------- */
 let agendaDati = null;
+const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+const DOW = { Mon: 'lun', Tue: 'mar', Wed: 'mer', Thu: 'gio', Fri: 'ven', Sat: 'sab', Sun: 'dom' };
+const RE_EV = /^(.*) - (lun|mar|mer|gio|ven|sab|dom) (\d{1,2}) (gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic), (tutto il giorno|\d{2}:\d{2}-\d{2}:\d{2})(?: - (.*?))? \[(.*)\]$/;
+function adessoRoma() {
+  const p = {};
+  new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Rome', weekday: 'short', day: 'numeric', month: 'numeric', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' })
+    .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+  return { dow: DOW[p.weekday], giorno: Number(p.day), mese: MESI[Number(p.month) - 1], min: Number(p.hour) * 60 + Number(p.minute) };
+}
+function eventiAgenda() {
+  if (!agendaDati || !agendaDati.testo) return { oggi: [], dopo: [] };
+  const ora = adessoRoma(), oggi = [], dopo = [];
+  agendaDati.testo.split('\n').forEach(riga => {
+    const m = RE_EV.exec(riga.trim());
+    if (!m) return;
+    const ev = { titolo: m[1], dow: m[2], giorno: Number(m[3]), mese: m[4], orario: m[5], luogo: m[6] || '', cal: m[7] };
+    if (ev.giorno === ora.giorno && ev.mese === ora.mese) {
+      if (ev.orario !== 'tutto il giorno') {
+        const fine = ev.orario.slice(6).split(':');
+        ev.passato = Number(fine[0]) * 60 + Number(fine[1]) < ora.min;
+      }
+      oggi.push(ev);
+    } else dopo.push(ev);
+  });
+  oggi.sort((a, b) => (a.orario === 'tutto il giorno' ? -1 : 0) - (b.orario === 'tutto il giorno' ? -1 : 0));
+  return { oggi, dopo };
+}
 function renderAgenda(a) {
   if (!a || !a.testo) return;
   agendaDati = a;
-  const el = $('#agenda');
-  el.innerHTML = '';
-  a.testo.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 25).forEach(r => {
+  srv('agenda', 'ok');
+  const { oggi, dopo } = eventiAgenda();
+  const eo = $('#evOggi'), en = $('#evNext');
+  eo.innerHTML = ''; en.innerHTML = '';
+  if (!oggi.length) {
     const d = document.createElement('div');
-    d.textContent = r;
-    el.appendChild(d);
+    d.className = 'empty'; d.style.display = 'block';
+    d.textContent = /Nessun evento/i.test(a.testo) ? 'Nessun evento nei prossimi giorni.' : 'Oggi non hai eventi in agenda.';
+    eo.appendChild(d);
+  }
+  oggi.forEach(ev => {
+    const d = document.createElement('div');
+    if (ev.passato) d.className = 'p';
+    const o = document.createElement('span'); o.className = 'o';
+    o.textContent = ev.orario === 'tutto il giorno' ? 'TUTTO IL GIORNO' : ev.orario.replace('-', ' – ');
+    const t = document.createElement('span');
+    t.textContent = ev.titolo;
+    if (ev.luogo) { const s = document.createElement('small'); s.textContent = ev.luogo; t.appendChild(s); }
+    d.appendChild(o); d.appendChild(t);
+    eo.appendChild(d);
   });
-  const agg = document.createElement('div');
-  agg.style.cssText = 'font-size:9px;opacity:.6;border:0';
-  agg.textContent = 'AGGIORNATO ' + new Date(a.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
-  el.appendChild(agg);
+  dopo.slice(0, 6).forEach(ev => {
+    const d = document.createElement('div');
+    const o = document.createElement('span'); o.className = 'o';
+    o.textContent = ev.dow + ' ' + ev.giorno + ' ' + ev.mese + (ev.orario === 'tutto il giorno' ? '' : ' · ' + ev.orario.slice(0, 5));
+    const t = document.createElement('span'); t.textContent = ev.titolo;
+    d.appendChild(o); d.appendChild(t);
+    en.appendChild(d);
+  });
+  $('#agAgg').textContent = 'AGGIORNATO ' + new Date(a.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
 }
 const RE_AGENDA = /calendario|agenda|appuntament|impegn|libero|libera|occupat|riunion|evento|eventi|scadenz/i;
 function agendaTestoPerJarvis() {
@@ -442,9 +718,9 @@ async function caricaStato() {
   if (!cfg.url || !cfg.code) return;
   try {
     const j = await chiama({ azione: 'stato' });
-    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); }
-    else if (j.risposta) log('sys', j.risposta);
-  } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); }
+    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); srv('memoria', 'ok'); }
+    else if (j.risposta) { log('sys', j.risposta); srv('memoria', 'ko'); }
+  } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); srv('memoria', 'ko'); }
 }
 function configura() {
   const u = prompt("Incolla l'URL dell'app web (finisce con /exec):", cfg.url);
@@ -457,7 +733,7 @@ function configura() {
   caricaStato();
 }
 
-/* ---------- VOCE ---------- */
+/* ---------- VOCE: SOLO GEMINI (Apple solo come ultima risorsa) ---------- */
 function voci() {
   return speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('it'));
 }
@@ -467,23 +743,39 @@ function vocePreferita() {
     || it.find(v => /luca/i.test(v.name))
     || it[0] || null;
 }
-function provaVoce() {
-  log('sys', 'Prova della voce Gemini...');
-  parla('Salve, sono Jarvis. Questa è la mia voce.');
-}
 const player = new Audio();
+let parlaId = 0, fermaCorrente = null;
 function sbloccaAudio() {
   try {
     player.onplay = player.onended = player.onerror = null;
     player.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
     player.play().catch(() => {});
   } catch (e) {}
-  const u = new SpeechSynthesisUtterance(' ');
-  u.volume = 0;
-  speechSynthesis.speak(u);
+  try {
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    speechSynthesis.speak(u);
+  } catch (e) {}
 }
-function parla(t) {
-  parlaGemini(t);
+function fermaVoce() {
+  parlaId++;
+  try { speechSynthesis.cancel(); } catch (e) {}
+  try { player.pause(); } catch (e) {}
+  if (fermaCorrente) { const f = fermaCorrente; fermaCorrente = null; f(); }
+}
+function pulisci(t) { return t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ').trim(); }
+function dividi(t, max, n) {
+  const parti = [];
+  let resto = t;
+  while (resto.length > max && parti.length < n - 1) {
+    const taglio = resto.slice(0, max);
+    const p = Math.max(taglio.lastIndexOf('. '), taglio.lastIndexOf('! '), taglio.lastIndexOf('? '));
+    const k = p > 150 ? p + 1 : taglio.lastIndexOf(' ');
+    parti.push(resto.slice(0, k).trim());
+    resto = resto.slice(k).trim();
+  }
+  parti.push(resto.length > max ? tagliaVoce(resto, max) : resto);
+  return parti;
 }
 function tagliaVoce(t, max) {
   if (t.length <= max) return t;
@@ -491,35 +783,72 @@ function tagliaVoce(t, max) {
   const p = Math.max(taglio.lastIndexOf('. '), taglio.lastIndexOf('! '), taglio.lastIndexOf('? '));
   return p > 200 ? taglio.slice(0, p + 1) : taglio;
 }
-async function parlaGemini(t) {
-  const t0 = Date.now();
-  try {
-    const testo = tagliaVoce(t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' '), 700);
-    const j = await chiama({ azione: 'voce', testo: testo });
-    if (!j.audio) throw new Error((j.errore || 'nessun audio ricevuto').slice(0, 200));
-    player.onplay = () => setState('speaking');
-    player.onended = player.onerror = () => setState('idle');
-    player.src = 'data:audio/wav;base64,' + j.audio;
-    await player.play();
-  } catch (e) {
-    const m = String(e.message);
-    let motivo = m;
-    if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
-    else if (/load failed/i.test(m)) motivo = 'nessuna risposta dopo ' + Math.round((Date.now() - t0) / 1000) + ' secondi';
-    log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple solo per questa risposta.');
-    parlaApple(t);
+async function ottieniAudio(testo) {
+  let ultimo = '';
+  for (let k = 0; k < 3; k++) {
+    try {
+      const j = await chiama({ azione: 'voce', testo: testo });
+      if (j.audio) return j.audio;
+      ultimo = j.errore || 'nessun audio ricevuto';
+    } catch (e) { ultimo = e.message; }
+    if (/429|RESOURCE_EXHAUSTED|quota/i.test(ultimo)) break;
+    await sleep(1500);
   }
+  throw new Error(String(ultimo).slice(0, 200));
+}
+function suona(b64) {
+  return new Promise((res, rej) => {
+    fermaCorrente = res;
+    player.onplay = () => setState('speaking');
+    player.onended = () => { fermaCorrente = null; res(); };
+    player.onerror = () => { fermaCorrente = null; rej(new Error('audio non riproducibile')); };
+    player.src = 'data:audio/wav;base64,' + b64;
+    player.play().catch(e => { fermaCorrente = null; rej(e); });
+  });
+}
+async function parla(t, parti) {
+  const id = ++parlaId;
+  const pezzi = dividi(pulisci(t), 650, parti || 1);
+  let prossimo = ottieniAudio(pezzi[0]);
+  prossimo.catch(() => {});
+  for (let i = 0; i < pezzi.length; i++) {
+    let audio;
+    try {
+      audio = await prossimo;
+      if (id !== parlaId) return;
+      if (i + 1 < pezzi.length) { prossimo = ottieniAudio(pezzi[i + 1]); prossimo.catch(() => {}); }
+      await suona(audio);
+    } catch (e) {
+      if (id !== parlaId) return;
+      const m = String(e.message);
+      let motivo = m;
+      if (/429|RESOURCE_EXHAUSTED|quota/i.test(m)) motivo = 'limite gratuito della voce raggiunto per ora';
+      else if (/load failed/i.test(m)) motivo = 'nessuna risposta dal server';
+      srv('voce', 'wa');
+      log('sys', 'Voce Gemini non disponibile (' + motivo + '): uso la voce di Apple solo per questa risposta.');
+      parlaApple(pezzi.slice(i).join(' '));
+      return;
+    }
+    if (id !== parlaId) return;
+  }
+  srv('voce', 'ok');
+  setState('idle');
 }
 function parlaApple(t) {
-  const pulito = t.replace(/[*_#`>]/g, '').replace(/\s+/g, ' ');
-  const u = new SpeechSynthesisUtterance(pulito);
-  u.lang = 'it-IT';
-  u.voice = vocePreferita();
-  u.rate = 1; u.pitch = 1;
-  u.onstart = () => setState('speaking');
-  u.onend = u.onerror = () => setState('idle');
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+  try {
+    const u = new SpeechSynthesisUtterance(pulisci(t));
+    u.lang = 'it-IT';
+    u.voice = vocePreferita();
+    u.rate = 1; u.pitch = 1;
+    u.onstart = () => setState('speaking');
+    u.onend = u.onerror = () => setState('idle');
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch (e) { setState('idle'); }
+}
+function provaVoce() {
+  log('sys', 'Prova della voce Gemini...');
+  parla('Salve, sono Jarvis. Questa è la mia voce.');
 }
 
 /* ---------- DOMANDE ---------- */
@@ -530,7 +859,7 @@ async function chiedi(q) {
   setState('thinking');
   const t0 = Date.now();
   const iv = setInterval(() => {
-    if (document.body.dataset.s === 'thinking') $('#core').innerHTML = 'ELABORO...<br>' + Math.round((Date.now() - t0) / 1000) + 's';
+    if (document.body.dataset.s === 'thinking') $('#stato').textContent = 'ELABORAZIONE ' + Math.round((Date.now() - t0) / 1000) + 's';
   }, 1000);
   try {
     let inviata = q;
@@ -569,16 +898,16 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
 function ascolta() {
   if (!SR) { log('sys', 'Qui il microfono non è supportato: scrivi nel campo in basso.'); return; }
-  speechSynthesis.cancel();
+  fermaVoce();
   if (rec) { rec.stop(); return; }
   rec = new SR();
   rec.lang = 'it-IT';
   rec.interimResults = false;
   let testo = '';
-  rec.onstart = () => setState('listening');
+  rec.onstart = () => { setState('listening'); $('#bParla').textContent = 'STOP'; };
   rec.onresult = e => { testo = e.results[0][0].transcript; };
   rec.onerror = e => { log('sys', 'Microfono: ' + e.error); };
-  rec.onend = () => { rec = null; if (testo) chiedi(testo); else setState('idle'); };
+  rec.onend = () => { rec = null; $('#bParla').textContent = 'PARLA'; if (testo) chiedi(testo); else setState('idle'); };
   rec.start();
 }
 function invia() {
@@ -588,26 +917,91 @@ function invia() {
   chiedi(v);
 }
 
-$('#orb').onclick = () => { sbloccaAudio(); ascolta(); };
+$('#orbc').onclick = () => { sbloccaAudio(); ascolta(); };
+$('#bParla').onclick = () => { sbloccaAudio(); ascolta(); };
 $('#bSend').onclick = () => { sbloccaAudio(); invia(); };
 $('#txt').addEventListener('keydown', e => { if (e.key === 'Enter') { sbloccaAudio(); invia(); } });
 $('#bCfg').onclick = configura;
 $('#bCitta').onclick = cambiaCitta;
 $('#bVoce').onclick = () => { sbloccaAudio(); provaVoce(); };
-$('#bStop').onclick = () => { speechSynthesis.cancel(); player.pause(); setState('idle'); };
+$('#bStop').onclick = () => { fermaVoce(); setState('idle'); };
 $('#bRes').onclick = () => {
   sbloccaAudio();
   chiedi('Fammi un resoconto delle email importanti, in ordine di priorità.');
 };
 
+/* ---------- AVVIO: schermata + lettura dei dati ---------- */
+function bootRiga(testo, esito) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(testo));
+  if (esito) { d.appendChild(document.createTextNode(' ')); const b = document.createElement('b'); b.textContent = esito; d.appendChild(b); }
+  $('#bl').appendChild(d);
+}
+function costruisciBriefing() {
+  const p = [];
+  const nR = Number($('#nR').textContent) || 0;
+  p.push(saluto() + ' Stefano. Tutti i sistemi sono operativi e la rete neurale è online' +
+    (nR > 0 ? ', con ' + nR + ' neuroni in memoria.' : '.'));
+  if (meteoOra) {
+    p.push('A ' + meteoOra.citta + ' ci sono ' + meteoOra.temp + ' gradi, ' + meteoOra.cond.toLowerCase() + '. Oggi minima ' + meteoOra.min +
+      ' e massima ' + meteoOra.max + (meteoOra.pioggia != null ? ', probabilità di pioggia ' + meteoOra.pioggia + ' percento.' : '.'));
+  }
+  if (agendaDati) {
+    const ev = eventiAgenda().oggi.filter(e => !e.passato);
+    if (!ev.length) p.push('Oggi non hai altri eventi in agenda.');
+    else p.push('Oggi ti restano ' + ev.length + (ev.length === 1 ? ' evento: ' : ' eventi: ') +
+      ev.slice(0, 4).map(e => e.titolo + (e.orario === 'tutto il giorno' ? ', tutto il giorno' : ' alle ' + e.orario.slice(0, 5).replace(':00', '').replace(':', ' e '))).join(', ') + '.');
+  }
+  const gs = Object.keys(saluteDati).sort();
+  if (gs.length) {
+    const u = saluteDati[gs[gs.length - 1]], q = [];
+    if (u.passi != null) q.push(u.passi + ' passi');
+    if (u.sonno != null) q.push(String(u.sonno).replace('.', ',') + ' ore di sonno');
+    if (u.fc != null) q.push('frequenza a riposo ' + u.fc);
+    if (q.length) p.push('Salute: ' + q.join(', ') + '.');
+  }
+  return p.join(' ');
+}
+let avviato = false;
+async function avvia() {
+  if (avviato) return;
+  avviato = true;
+  sbloccaAudio();
+  $('#bTap').style.display = 'none';
+  $('#boot .bar').style.display = 'block';
+  const barra = v => { $('#bi').style.width = v + '%'; };
+  if (!cfg.url || !cfg.code) configura();
+  setTimeout(() => barra(15), 50);
+  bootRiga('INIZIALIZZAZIONE SISTEMI', 'OK');
+  await sleep(700);
+  bootRiga('RETE NEURALE', 'ONLINE');
+  barra(35);
+  await Promise.race([Promise.all([caricaStato(), caricaMeteo()]), sleep(10000)]);
+  barra(75);
+  const nR = Number($('#nR').textContent) || 0, nS = $('#nS').textContent;
+  bootRiga('MEMORIA: ' + nR + ' NEURONI · ' + nS + ' SINAPSI');
+  await sleep(350);
+  if (meteoOra) bootRiga('METEO: ' + meteoOra.citta.toUpperCase() + ' ' + meteoOra.temp + '°C');
+  await sleep(350);
+  if (agendaDati) bootRiga('CALENDARIO: ' + eventiAgenda().oggi.length + ' EVENTI OGGI');
+  await sleep(350);
+  if (Object.keys(saluteDati).length) bootRiga('SALUTE: DATI RICEVUTI');
+  barra(100);
+  await sleep(900);
+  $('#boot').style.opacity = 0;
+  setTimeout(() => $('#boot').remove(), 1100);
+  const b = costruisciBriefing();
+  log('jarvis', b);
+  setState('thinking');
+  parla(b, 2);
+}
+$('#bTap').onclick = avvia;
+
 aggiornaLink();
+srv('voce', 'ok');
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', 'Buongiorno. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v12)');
-setTimeout(() => { $('#bi').style.width = '100%'; }, 50);
-setTimeout(() => { $('#boot').style.opacity = 0; setTimeout(() => $('#boot').remove(), 900); caricaStato(); }, 2500);
-if (!cfg.url || !cfg.code) setTimeout(configura, 3000);
-setTimeout(caricaMeteo, 4500);
+log('sys', 'Jarvis pagina v13');
 </script>
 </body>
 </html>
