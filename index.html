@@ -806,7 +806,7 @@ function suona(b64) {
     player.play().catch(e => { fermaCorrente = null; rej(e); });
   });
 }
-async function parla(t, parti) {
+async function parla(t, parti, attesa) {
   const id = ++parlaId;
   const pezzi = dividi(pulisci(t), 650, parti || 1);
   let prossimo = ottieniAudio(pezzi[0]);
@@ -815,6 +815,7 @@ async function parla(t, parti) {
     let audio;
     try {
       audio = await prossimo;
+      if (i === 0 && attesa) await attesa;
       if (id !== parlaId) return;
       if (i + 1 < pezzi.length) { prossimo = ottieniAudio(pezzi[i + 1]); prossimo.catch(() => {}); }
       await suona(audio);
@@ -938,10 +939,11 @@ function bootRiga(testo, esito) {
   if (esito) { d.appendChild(document.createTextNode(' ')); const b = document.createElement('b'); b.textContent = esito; d.appendChild(b); }
   $('#bl').appendChild(d);
 }
-function costruisciBriefing() {
+function costruisciBriefing(avvio) {
   const p = [];
   const nR = Number($('#nR').textContent) || 0;
-  p.push(saluto() + ' Stefano. Tutti i sistemi sono operativi e la rete neurale è online' +
+  if (avvio) p.push(saluto() + ' Stefano.' + (nR > 0 ? ' In memoria ho ' + nR + ' neuroni.' : ''));
+  else p.push(saluto() + ' Stefano. Tutti i sistemi sono operativi e la rete neurale è online' +
     (nR > 0 ? ', con ' + nR + ' neuroni in memoria.' : '.'));
   if (meteoOra) {
     p.push('A ' + meteoOra.citta + ' ci sono ' + meteoOra.temp + ' gradi, ' + meteoOra.cond.toLowerCase() + '. Oggi minima ' + meteoOra.min +
@@ -972,6 +974,8 @@ async function avvia() {
   $('#boot .bar').style.display = 'block';
   const barra = v => { $('#bi').style.width = v + '%'; };
   if (!cfg.url || !cfg.code) configura();
+  setState('thinking');
+  const prima = parla('Inizializzazione dei sistemi completata. Rete neurale online.');
   setTimeout(() => barra(15), 50);
   bootRiga('INIZIALIZZAZIONE SISTEMI', 'OK');
   await sleep(700);
@@ -979,10 +983,10 @@ async function avvia() {
   barra(35);
   await Promise.race([Promise.all([caricaStato(), caricaMeteo()]), sleep(10000)]);
   barra(75);
-  const briefing = costruisciBriefing();
+  const briefing = costruisciBriefing(true);
   log('jarvis', briefing);
   setState('thinking');
-  parla(briefing, 2);
+  parla(briefing, 2, prima);
   const nR = Number($('#nR').textContent) || 0, nS = $('#nS').textContent;
   bootRiga('MEMORIA: ' + nR + ' NEURONI · ' + nS + ' SINAPSI');
   await sleep(1200);
@@ -1002,7 +1006,7 @@ aggiornaLink();
 srv('voce', 'ok');
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v13b');
+log('sys', 'Jarvis pagina v13c');
 </script>
 </body>
 </html>
