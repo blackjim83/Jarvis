@@ -125,6 +125,7 @@ footer input:focus{border-color:var(--c)}
         <button class="btn" id="bVoce">CAMBIA VOCE</button>
         <button class="btn" id="bCfg">IMPOSTAZIONI</button>
         <button class="btn" id="bStop">ZITTISCI</button>
+        <button class="btn wide" id="bVel">VELOCIT&Agrave;</button>
         <button class="btn wide" id="bAuto">ASCOLTO CONTINUO: NO</button>
       </div>
       <div class="mem">
@@ -424,6 +425,15 @@ function cambiaVoce() {
   log('sys', 'Voce: ' + (prossima === 'GEMINI' ? 'Gemini (naturale, a pagamento)' : prossima));
   parla('Salve, sono Jarvis. Questa è la mia nuova voce.');
 }
+const VEL = [0.8, 0.9, 1, 1.05, 1.15];
+const vel = () => Number(get('j_vel')) || 1.05;
+function mostraVel() { $('#bVel').textContent = 'VELOCITÀ: ' + vel(); }
+function cambiaVel() {
+  put('j_vel', String(VEL[(VEL.indexOf(vel()) + 1) % VEL.length]));
+  mostraVel();
+  sbloccaAudio();
+  parla('Questa è la mia nuova velocità.');
+}
 const player = new Audio();
 function sbloccaAudio() {
   try {
@@ -490,7 +500,7 @@ function parlaApple(t, riprova) {
   const v = riprova ? null : vocePreferita();
   u.lang = 'it-IT';
   u.voice = v;
-  u.rate = 1.05; u.pitch = 1;
+  u.rate = vel(); u.pitch = 1;
   const nome = v ? v.name : 'di sistema';
   let partita = false;
   const guardia = setTimeout(() => {
@@ -574,6 +584,7 @@ $('#bCfg').onclick = configura;
 $('#bCitta').onclick = cambiaCitta;
 $('#bVoce').onclick = () => { sbloccaAudio(); cambiaVoce(); };
 $('#bStop').onclick = () => { fermaVoce(); setState('idle'); };
+$('#bVel').onclick = cambiaVel;
 $('#bAuto').onclick = () => {
   auto = !auto;
   $('#bAuto').textContent = 'ASCOLTO CONTINUO: ' + (auto ? 'SÌ' : 'NO');
@@ -587,9 +598,10 @@ $('#bRes').onclick = () => {
 
 /* ---------- AVVIO ---------- */
 aggiornaLink();
+mostraVel();
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('jarvis', saluto() + '. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v13)');
+log('jarvis', saluto() + '. Sono pronto: tocca la sfera e parlami, oppure scrivi in basso. (pagina v14)');
 const ok = !!(cfg.url && cfg.code);
 const RIGHE = [
   ['INIZIALIZZAZIONE SISTEMI OK', 'Inizializzazione dei sistemi completata.'],
@@ -605,7 +617,7 @@ function leggiBreve(t) {
     const tm = setTimeout(fine, 5000);
     try {
       const u = new SpeechSynthesisUtterance(t);
-      u.lang = 'it-IT'; u.voice = vocePreferita(); u.rate = 1.05;
+      u.lang = 'it-IT'; u.voice = vocePreferita(); u.rate = vel();
       u.onend = u.onerror = fine;
       speechSynthesis.speak(u);
     } catch (e) { fine(); }
@@ -624,6 +636,8 @@ async function avvia() {
     await leggiBreve(RIGHE[i][1]);
   }
   await leggiBreve(saluto() + ', signore. Sono pronto.');
+  const vv = vocePreferita();
+  log('sys', 'Voce in uso: ' + (get('j_voce2') || (vv ? vv.name : 'di sistema')) + ' · velocità ' + vel());
   $('#boot').style.opacity = 0;
   setTimeout(() => $('#boot').remove(), 900);
   caricaStato(); caricaMeteo();
