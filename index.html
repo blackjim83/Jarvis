@@ -1172,14 +1172,14 @@ function costruisciBriefing(avvio) {
   if (agendaDati || eventiTel) {
     const ev = eventiAgenda().oggi.filter(e => !e.passato);
     if (!ev.length) p.push('Oggi non hai altri eventi in agenda.');
-    else p.push('Oggi ti restano ' + ev.length + (ev.length === 1 ? ' evento: ' : ' eventi: ') +
+    else p.push((ev.length === 1 ? 'Oggi ti resta un evento: ' : 'Oggi ti restano ' + ev.length + ' eventi: ') +
       ev.slice(0, 4).map(e => e.titolo + (e.orario === 'tutto il giorno' ? ', tutto il giorno' : ' alle ' + e.orario.slice(0, 5).replace(':00', '').replace(':', ' e '))).join(', ') + '.');
   }
   const gs = Object.keys(saluteDati).sort();
   if (gs.length) {
     const u = saluteDati[gs[gs.length - 1]], q = [];
     if (u.passi != null) q.push(u.passi + ' passi');
-    if (q.length) p.push('Salute: ' + q.join(', ') + '.');
+    if (q.length) p.push('Per quanto riguarda la tua salute, attualmente hai registrato ' + q.join(', ') + '.');
   }
   return p.join(' ');
 }
@@ -1236,7 +1236,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v18');
+log('sys', 'Jarvis pagina v19');
 </script>
 </body>
 </html>
