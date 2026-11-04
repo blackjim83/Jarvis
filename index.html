@@ -1210,7 +1210,7 @@ async function avvia() {
   await sleep(1200);
   if (meteoOra) bootRiga('METEO: ' + meteoOra.citta.toUpperCase() + ' ' + meteoOra.temp + '°C, ' + meteoOra.cond.toUpperCase());
   await sleep(1200);
-  if (agendaDati || eventiTel) bootRiga('CALENDARIO: ' + eventiAgenda().oggi.length + ' EVENTI OGGI');
+  if (agendaDati || eventiTel) { const n = eventiAgenda().oggi.length; bootRiga('CALENDARIO: ' + n + (n === 1 ? ' EVENTO OGGI' : ' EVENTI OGGI')); }
   await sleep(1200);
   if (Object.keys(saluteDati).length) bootRiga('SALUTE: DATI RICEVUTI');
   barra(100);
@@ -1236,7 +1236,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v17');
+log('sys', 'Jarvis pagina v18');
 </script>
 </body>
 </html>
