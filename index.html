@@ -89,6 +89,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) mi
 .ev div:last-child{border:0}
 .ev .o{font-size:11px;opacity:.8}
 .ev .p{opacity:.35}
+.ev .late .o{color:var(--warn);opacity:1}
 .ev small{display:block;font-size:9.5px;opacity:.55;margin-top:1px}
 .ev.next div{grid-template-columns:96px 1fr;font-size:11px}
 
@@ -224,6 +225,12 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) mi
       <h2 style="margin-top:4px">PROSSIMI GIORNI</h2>
       <div class="ev next" id="evNext"></div>
       <div class="agg" id="agAgg"></div>
+    </section>
+
+    <section class="panel" id="promP">
+      <h2>PROMEMORIA <span id="promN">--</span></h2>
+      <div class="ev" id="prom"><div class="empty" style="display:block">In attesa dei dati dal Comando Rapido sull'iPhone.</div></div>
+      <div class="agg" id="promAgg"></div>
     </section>
 
     <section class="panel">
@@ -705,6 +712,61 @@ function renderAgenda(a) {
   });
   $('#agAgg').textContent = 'AGGIORNATO ' + new Date(a.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
 }
+/* ---------- PROMEMORIA ---------- */
+let promDati = null;
+function promemoriaLista(p) {
+  if (!p || !p.t) return [];
+  return String(p.testo || '').split('\n').map(r => r.trim()).filter(Boolean).map(r => {
+    const i = r.lastIndexOf('|');
+    const titolo = (i >= 0 ? r.slice(0, i) : r).trim();
+    const d = i >= 0 ? dataDa(r.slice(i + 1).trim()) : null;
+    return { titolo, d };
+  }).filter(x => x.titolo).sort((a, b) => (a.d ? a.d.getTime() : 9e15) - (b.d ? b.d.getTime() : 9e15));
+}
+function etichettaProm(d) {
+  if (!d) return { t: 'SENZA DATA', late: false };
+  const ora = new Date();
+  const g0 = new Date(ora.getFullYear(), ora.getMonth(), ora.getDate());
+  const g1 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((g1 - g0) / 86400000);
+  const hh = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  if (d < ora) return { t: 'SCADUTO ' + String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'), late: true };
+  if (diff === 0) return { t: 'OGGI ' + hh, late: false };
+  if (diff === 1) return { t: 'DOMANI ' + hh, late: false };
+  return { t: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + ' ' + hh, late: false };
+}
+function renderPromemoria(p) {
+  if (!p || !p.t) return;
+  promDati = p;
+  const lista = promemoriaLista(p);
+  const el = $('#prom');
+  el.innerHTML = '';
+  $('#promN').textContent = lista.length ? lista.length + (lista.length === 1 ? ' DA FARE' : ' DA FARE') : 'NESSUNO';
+  if (!lista.length) {
+    const d = document.createElement('div');
+    d.className = 'empty'; d.style.display = 'block';
+    d.textContent = 'Nessun promemoria da fare.';
+    el.appendChild(d);
+  }
+  lista.slice(0, 12).forEach(x => {
+    const e = etichettaProm(x.d);
+    const d = document.createElement('div');
+    if (e.late) d.className = 'late';
+    const o = document.createElement('span'); o.className = 'o'; o.textContent = e.t;
+    const t = document.createElement('span'); t.textContent = x.titolo;
+    d.appendChild(o); d.appendChild(t);
+    el.appendChild(d);
+  });
+  $('#promAgg').textContent = 'AGGIORNATO ' + new Date(p.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
+}
+const RE_PROM = /promemoria|da fare|cose da fare|scadut/i;
+function promemoriaTestoPerJarvis() {
+  if (!promDati) return '';
+  const l = promemoriaLista(promDati);
+  return "Promemoria non completati dell'utente dall'app Promemoria dell'iPhone (inviati alle " +
+    new Date(promDati.t).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) + '): ' +
+    (l.length ? l.map(x => x.titolo + (x.d ? ' (' + etichettaProm(x.d).t.toLowerCase() + ')' : ' (senza data)')).join('; ') : 'nessuno') + '.';
+}
 const RE_AGENDA = /calendario|agenda|appuntament|impegn|libero|libera|occupat|riunion|evento|eventi|scadenz/i;
 function agendaTestoPerJarvis() {
   if (!agendaDati) return '';
@@ -727,7 +789,7 @@ async function caricaStato() {
   if (!cfg.url || !cfg.code) return;
   try {
     const j = await chiama({ azione: 'stato' });
-    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); srv('memoria', 'ok'); }
+    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); renderPromemoria(j.promemoria); srv('memoria', 'ok'); }
     else if (j.risposta) { log('sys', j.risposta); srv('memoria', 'ko'); }
   } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); srv('memoria', 'ko'); }
 }
@@ -947,6 +1009,11 @@ async function chiedi(q) {
       if (at) { inviata += '\n\n[' + at + ']'; log('sys', '📅 Agenda allegata alla domanda'); }
       else log('sys', 'Nessuna agenda ricevuta: serve prima il Comando Rapido sull\'iPhone.');
     }
+    if (RE_PROM.test(q)) {
+      const pt = promemoriaTestoPerJarvis();
+      if (pt) { inviata += '\n\n[' + pt + ']'; log('sys', '✔ Promemoria allegati alla domanda'); }
+      else log('sys', 'Nessun promemoria ricevuto: serve prima il Comando Rapido sull\'iPhone.');
+    }
     const j = await chiama({ domanda: inviata, storia: storia.slice(-8) });
     storia.push({ r: 'u', t: q }, { r: 'j', t: j.risposta });
     if (storia.length > 16) storia.splice(0, storia.length - 16);
@@ -1083,7 +1150,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v14');
+log('sys', 'Jarvis pagina v15');
 </script>
 </body>
 </html>
