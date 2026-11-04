@@ -103,6 +103,10 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) mi
 .center::-webkit-scrollbar{display:none}
 #orbc{width:min(100%,44vh);aspect-ratio:1;flex:none;cursor:pointer;-webkit-tap-highlight-color:transparent;display:block}
 #cap{font-size:12px;line-height:1.55;text-align:center;opacity:.9;min-height:3.1em;max-width:520px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:.03em}
+.conf{width:100%;max-width:560px;border:1px solid var(--c);padding:12px 14px;display:none;flex-direction:column;gap:8px;background:rgba(2,8,12,.9);box-shadow:0 0 18px var(--dim)}
+.conf .t{font-size:10px;letter-spacing:.28em;opacity:.75}
+.conf .d{font-size:13px;line-height:1.5}
+.conf .b{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .inrow{display:flex;gap:8px;width:100%;max-width:560px}
 .inrow input{flex:1;min-width:0;background:rgba(2,8,12,.9);border:1px solid var(--dim);color:var(--c);padding:12px;font:inherit;font-size:16px;outline:none}
 .inrow input:focus{border-color:var(--c)}
@@ -193,6 +197,11 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(270px,1fr) mi
   <section class="center">
     <canvas id="orbc"></canvas>
     <div id="cap">Tocca la sfera e parlami, oppure scrivi qui sotto.</div>
+    <div class="conf" id="conf">
+      <div class="t" id="confT">CONFERMA</div>
+      <div class="d" id="confD"></div>
+      <div class="b"><button class="btn" id="bOk">CONFERMA</button><button class="btn" id="bNo">ANNULLA</button></div>
+    </div>
     <div class="inrow">
       <input id="txt" placeholder="Scrivi a Jarvis..." autocomplete="off">
     </div>
@@ -853,6 +862,59 @@ function provaVoce() {
   parla('Salve, sono Jarvis. Questa è la mia voce.');
 }
 
+/* ---------- EVENTI E PROMEMORIA ---------- */
+const RE_CREA = /ricordami|promemoria|ricorda(?:mi)? di|(?:aggiungi|metti|segna|inserisci|crea|fissa|prenota).{0,40}(?:calendario|agenda|evento|appuntamento|promemoria|riunione)|(?:crea|fissa|prenota)\s+(?:un|una|l')/i;
+let pendente = null;
+const NOME_COMANDO = 'Jarvis Crea';
+function dataDa(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || '');
+  return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : null;
+}
+function quando(j) {
+  const d = dataDa(j.inizio);
+  if (!d) return { scritto: 'data non chiara', parlato: 'in una data non chiara' };
+  const g = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+  if (j.tutto_il_giorno) return { scritto: g + ' (tutto il giorno)', parlato: g + ', tutto il giorno' };
+  const hh = d.getHours(), mm = d.getMinutes();
+  const scritto = g + ', ' + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  const f = dataDa(j.fine);
+  const fine = (f && j.tipo === 'evento') ? ' – ' + String(f.getHours()).padStart(2, '0') + ':' + String(f.getMinutes()).padStart(2, '0') : '';
+  return { scritto: scritto + fine, parlato: g + ' alle ' + hh + (mm ? ' e ' + mm : '') };
+}
+function mostraConferma(j) {
+  const q = quando(j);
+  $('#confT').textContent = (j.tipo === 'evento' ? 'NUOVO EVENTO' : 'NUOVO PROMEMORIA') + ' · CONFERMA';
+  const righe = [j.titolo, q.scritto];
+  if (j.luogo) righe.push('Luogo: ' + j.luogo);
+  if (j.note) righe.push('Note: ' + j.note);
+  $('#confD').textContent = righe.join('\n');
+  $('#confD').style.whiteSpace = 'pre-line';
+  $('#conf').style.display = 'flex';
+  return q;
+}
+function nascondiConferma() { $('#conf').style.display = 'none'; pendente = null; }
+async function proponi(q) {
+  const j = await chiama({ azione: 'interpreta', testo: q });
+  if (!j || (j.tipo !== 'evento' && j.tipo !== 'promemoria') || !j.titolo || !dataDa(j.inizio)) return false;
+  pendente = j;
+  const qd = mostraConferma(j);
+  const frase = 'Creo ' + (j.tipo === 'evento' ? "l'evento " : 'il promemoria ') + j.titolo + ', ' + qd.parlato + '. Confermi con il pulsante.';
+  log('jarvis', frase);
+  parla(frase);
+  return true;
+}
+function eseguiConferma() {
+  if (!pendente) return;
+  const j = pendente;
+  nascondiConferma();
+  const payload = JSON.stringify({ tipo: j.tipo, titolo: j.titolo, inizio: j.inizio, fine: j.fine || '', tutto_il_giorno: !!j.tutto_il_giorno, luogo: j.luogo || '', note: j.note || '', avviso_minuti: j.avviso_minuti || 0 });
+  log('sys', 'Invio a Comandi Rapidi: ' + j.titolo);
+  location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(NOME_COMANDO) + '&input=text&text=' + encodeURIComponent(payload) +
+    '&x-success=' + encodeURIComponent(location.href.split(/[?#]/)[0] + '?r=1');
+}
+$('#bOk').onclick = () => { sbloccaAudio(); eseguiConferma(); };
+$('#bNo').onclick = () => { nascondiConferma(); fermaVoce(); setState('idle'); log('sys', 'Annullato.'); };
+
 /* ---------- DOMANDE ---------- */
 const RE_METEO = /meteo|che tempo|piove|piogg|sole|soleggiat|nuvol|temperatur|caldo|freddo|neve|nevic|vento|ombrello|previsioni|temporale|gradi/i;
 async function chiedi(q) {
@@ -864,6 +926,11 @@ async function chiedi(q) {
     if (document.body.dataset.s === 'thinking') $('#stato').textContent = 'ELABORAZIONE ' + Math.round((Date.now() - t0) / 1000) + 's';
   }, 1000);
   try {
+    if (RE_CREA.test(q)) {
+      let gestita = false;
+      try { gestita = await proponi(q); } catch (e) { log('sys', 'Non riesco a interpretare la richiesta: ' + e.message); }
+      if (gestita) return;
+    }
     let inviata = q;
     if (RE_METEO.test(q)) {
       if (!meteoTesto) await caricaMeteo();
@@ -999,18 +1066,24 @@ async function avvia() {
   setTimeout(() => $('#boot').remove(), 1100);
 }
 $('#bTap').onclick = avvia;
+if (/[?&]r=1/.test(location.search)) {
+  avviato = true;
+  $('#boot').remove();
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  caricaStato(); caricaMeteo();
+}
 
 aggiornaLink();
 srv('voce', 'ok');
 if (/iPhone/.test(navigator.userAgent)) {
   const bs = $('#bSal');
   bs.style.display = 'block';
-  bs.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Salute Jarvis') + '&x-success=' + encodeURIComponent(location.href.split('#')[0]);
+  bs.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Salute Jarvis') + '&x-success=' + encodeURIComponent(location.href.split(/[?#]/)[0] + '?r=1');
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v13e');
+log('sys', 'Jarvis pagina v14');
 </script>
 </body>
 </html>
