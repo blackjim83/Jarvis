@@ -581,9 +581,7 @@ async function cambiaCitta() {
 /* ---------- SALUTE ---------- */
 let saluteDati = {};
 const RIGHE_SALUTE = [
-  ['PASSI', 'passi', v => Number(v).toLocaleString('it-IT'), v => v >= 8000 ? '#4dffb0' : v >= 4000 ? '#ffb62e' : '#ff5a5a', 12000],
-  ['SONNO', 'sonno', v => String(v).replace('.', ',') + ' h', v => v >= 7 ? '#4dffb0' : v >= 6 ? '#ffb62e' : '#ff5a5a', 10],
-  ['FC A RIPOSO', 'fc', v => v + ' bpm', () => '#19e3f0', 100]
+  ['PASSI', 'passi', v => Number(v).toLocaleString('it-IT'), v => v >= 8000 ? '#4dffb0' : v >= 4000 ? '#ffb62e' : '#ff5a5a', 12000]
 ];
 function renderSalute(s) {
   if (!s) return;
@@ -622,15 +620,13 @@ function renderSalute(s) {
   agg.textContent = 'AGGIORNATO ' + new Date(ultimo.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
   el.appendChild(agg);
 }
-const RE_SALUTE = /passi|cammin|sonno|dorm|frequenza|battit|cuore|salute|stanc|riposat|movimento|attivit/i;
+const RE_SALUTE = /passi|cammin|salute|movimento|attivit/i;
 function saluteTestoPerJarvis() {
   const giorni = Object.keys(saluteDati).sort().slice(-7);
   if (!giorni.length) return '';
   const riga = g => {
     const v = saluteDati[g], p = [];
     if (v.passi != null) p.push(v.passi + ' passi');
-    if (v.sonno != null) p.push('sonno ' + v.sonno + ' ore');
-    if (v.fc != null) p.push('frequenza cardiaca a riposo ' + v.fc);
     return g + ': ' + p.join(', ');
   };
   return 'Dati di Apple Salute dell\'utente, inviati dal suo iPhone (non in tempo reale). ' + giorni.map(riga).join('. ') +
@@ -963,8 +959,6 @@ function costruisciBriefing(avvio) {
   if (gs.length) {
     const u = saluteDati[gs[gs.length - 1]], q = [];
     if (u.passi != null) q.push(u.passi + ' passi');
-    if (u.sonno != null) q.push(String(u.sonno).replace('.', ',') + ' ore di sonno');
-    if (u.fc != null) q.push('frequenza a riposo ' + u.fc);
     if (q.length) p.push('Salute: ' + q.join(', ') + '.');
   }
   return p.join(' ');
@@ -1016,7 +1010,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v13d');
+log('sys', 'Jarvis pagina v13e');
 </script>
 </body>
 </html>
