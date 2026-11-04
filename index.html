@@ -954,7 +954,49 @@ function mostraConferma(j) {
   $('#conf').style.display = 'flex';
   return q;
 }
-function nascondiConferma() { $('#conf').style.display = 'none'; pendente = null; }
+function nascondiConferma() { $('#conf').style.display = 'none'; pendente = null; $('#conf').style.borderColor = ''; $('#bOk').textContent = 'CONFERMA'; }
+const RE_CANC = /(cancell|elimin|rimuov|togli|annulla).{0,50}(promemoria|evento|appuntamento|riunione)|(promemoria|evento|appuntamento|riunione).{0,40}(cancell|elimin|rimuov|togli)/i;
+const z2 = n => String(n).padStart(2, '0');
+function isoDa(d) { return d.getFullYear() + '-' + z2(d.getMonth() + 1) + '-' + z2(d.getDate()) + 'T' + z2(d.getHours()) + ':' + z2(d.getMinutes()); }
+function contestoCancella() {
+  const r = [];
+  promemoriaLista(promDati).forEach(x => r.push('promemoria|' + x.titolo + '|' + (x.d ? isoDa(x.d) : '')));
+  const ev = eventiAgenda();
+  const ora = new Date();
+  ev.oggi.concat(ev.dopo).forEach(e => {
+    const mi = MESI.indexOf(e.mese);
+    let anno = ora.getFullYear();
+    if (mi < ora.getMonth() - 6) anno++;
+    const hh = e.orario === 'tutto il giorno' ? '00:00' : e.orario.slice(0, 5);
+    r.push('evento|' + e.titolo + '|' + anno + '-' + z2(mi + 1) + '-' + z2(e.giorno) + 'T' + hh);
+  });
+  return r.join('\n');
+}
+async function proponiCancella(q) {
+  const contesto = contestoCancella();
+  if (!contesto) { log('sys', 'Non ho ancora la lista di promemoria ed eventi: aspetta l\'aggiornamento e riprova.'); return true; }
+  const j = await chiama({ azione: 'interpreta_cancella', testo: q, contesto: contesto });
+  if (!j || j.tipo !== 'cancella' || !j.titolo) return false;
+  if (!j.chiaro) {
+    const f = 'Non sono sicuro di quale ' + (j.oggetto === 'evento' ? 'evento' : 'promemoria') + ' intendi: puoi essere più preciso?';
+    log('jarvis', f); parla(f);
+    return true;
+  }
+  j.oggetto = j.oggetto === 'evento' ? 'evento' : 'promemoria';
+  pendente = { tipo: 'cancella', oggetto: j.oggetto, titolo: j.titolo, inizio: j.inizio || '' };
+  const d = dataDa(j.inizio);
+  const qd = d ? quando({ inizio: j.inizio, tipo: j.oggetto, tutto_il_giorno: false }) : null;
+  $('#confT').textContent = 'CANCELLAZIONE ' + j.oggetto.toUpperCase() + ' · CONFERMA';
+  $('#confD').style.whiteSpace = 'pre-line';
+  $('#confD').textContent = j.titolo + (qd ? '\n' + qd.scritto : '');
+  $('#conf').style.borderColor = '#ff5a5a';
+  $('#bOk').textContent = 'CANCELLA';
+  $('#conf').style.display = 'flex';
+  const frase = 'Cancello ' + (j.oggetto === 'evento' ? "l'evento " : 'il promemoria ') + j.titolo + (qd ? ', ' + qd.parlato : '') + '. Confermi con il pulsante.';
+  log('jarvis', frase);
+  parla(frase);
+  return true;
+}
 async function proponi(q) {
   const j = await chiama({ azione: 'interpreta', testo: q });
   if (!j || (j.tipo !== 'evento' && j.tipo !== 'promemoria') || !j.titolo || !dataDa(j.inizio)) return false;
@@ -969,6 +1011,13 @@ function eseguiConferma() {
   if (!pendente) return;
   const j = pendente;
   nascondiConferma();
+  if (j.tipo === 'cancella') {
+    log('sys', 'Cancello: ' + j.titolo);
+    location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Jarvis Cancella') + '&input=text&text=' +
+      encodeURIComponent(JSON.stringify({ oggetto: j.oggetto, titolo: j.titolo, inizio: j.inizio })) +
+      '&x-success=' + encodeURIComponent(location.href.split(/[?#]/)[0] + '?r=1');
+    return;
+  }
   const payload = JSON.stringify({ tipo: j.tipo, titolo: j.titolo, inizio: j.inizio, fine: j.fine || '', tutto_il_giorno: !!j.tutto_il_giorno, luogo: j.luogo || '', note: j.note || '', avviso_minuti: j.avviso_minuti || 0 });
   log('sys', 'Invio a Comandi Rapidi: ' + j.titolo);
   location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent(NOME_COMANDO) + '&input=text&text=' + encodeURIComponent(payload) +
@@ -988,6 +1037,11 @@ async function chiedi(q) {
     if (document.body.dataset.s === 'thinking') $('#stato').textContent = 'ELABORAZIONE ' + Math.round((Date.now() - t0) / 1000) + 's';
   }, 1000);
   try {
+    if (RE_CANC.test(q)) {
+      let gestita = false;
+      try { gestita = await proponiCancella(q); } catch (e) { log('sys', 'Non riesco a interpretare la richiesta: ' + e.message); }
+      if (gestita) return;
+    }
     if (RE_CREA.test(q)) {
       let gestita = false;
       try { gestita = await proponi(q); } catch (e) { log('sys', 'Non riesco a interpretare la richiesta: ' + e.message); }
@@ -1150,7 +1204,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v15');
+log('sys', 'Jarvis pagina v16');
 </script>
 </body>
 </html>
