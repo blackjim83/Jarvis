@@ -651,6 +651,7 @@ function saluteTestoPerJarvis() {
 
 /* ---------- AGENDA ---------- */
 let agendaDati = null;
+let eventiTel = null;
 const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 const DOW = { Mon: 'lun', Tue: 'mar', Wed: 'mer', Thu: 'gio', Fri: 'ven', Sat: 'sab', Sun: 'dom' };
 const RE_EV = /^(.*) - (lun|mar|mer|gio|ven|sab|dom) (\d{1,2}) (gen|feb|mar|apr|mag|giu|lug|ago|set|ott|nov|dic), (tutto il giorno|\d{2}:\d{2}-\d{2}:\d{2})(?: - (.*?))? \[(.*)\]$/;
@@ -660,7 +661,32 @@ function adessoRoma() {
     .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
   return { dow: DOW[p.weekday], giorno: Number(p.day), mese: MESI[Number(p.month) - 1], min: Number(p.hour) * 60 + Number(p.minute) };
 }
+const GG = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+function eventiDaTelefono() {
+  const ora = new Date();
+  const g0 = new Date(ora.getFullYear(), ora.getMonth(), ora.getDate());
+  const oggi = [], dopo = [];
+  String(eventiTel.testo || '').split('\n').forEach(riga => {
+    const c = riga.split('|');
+    if (c.length < 2) return;
+    const d = dataDa(c[1].trim()), f = dataDa((c[2] || '').trim());
+    if (!d) return;
+    const tutto = /tutto|true|sì|si|yes/i.test((c[5] || '').trim());
+    const ev = { titolo: c[0].trim(), dow: GG[d.getDay()], giorno: d.getDate(), mese: MESI[d.getMonth()], luogo: (c[3] || '').trim(), cal: (c[4] || '').trim(), t: d.getTime() };
+    ev.orario = tutto ? 'tutto il giorno' : z2(d.getHours()) + ':' + z2(d.getMinutes()) + '-' + z2((f || d).getHours()) + ':' + z2((f || d).getMinutes());
+    const g1 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (g1 < g0) return;
+    if (g1.getTime() === g0.getTime()) {
+      ev.passato = !tutto && (f || d) < ora;
+      oggi.push(ev);
+    } else dopo.push(ev);
+  });
+  oggi.sort((a, b) => (a.orario === 'tutto il giorno' ? -1 : 0) - (b.orario === 'tutto il giorno' ? -1 : 0) || a.t - b.t);
+  dopo.sort((a, b) => a.t - b.t);
+  return { oggi, dopo };
+}
 function eventiAgenda() {
+  if (eventiTel && eventiTel.t) return eventiDaTelefono();
   if (!agendaDati || !agendaDati.testo) return { oggi: [], dopo: [] };
   const ora = adessoRoma(), oggi = [], dopo = [];
   agendaDati.testo.split('\n').forEach(riga => {
@@ -679,8 +705,8 @@ function eventiAgenda() {
   return { oggi, dopo };
 }
 function renderAgenda(a) {
-  if (!a || !a.testo) return;
-  agendaDati = a;
+  if ((!a || !a.testo) && !(eventiTel && eventiTel.t)) return;
+  if (a && a.testo) agendaDati = a;
   srv('agenda', 'ok');
   const { oggi, dopo } = eventiAgenda();
   const eo = $('#evOggi'), en = $('#evNext');
@@ -688,7 +714,7 @@ function renderAgenda(a) {
   if (!oggi.length) {
     const d = document.createElement('div');
     d.className = 'empty'; d.style.display = 'block';
-    d.textContent = /Nessun evento/i.test(a.testo) ? 'Nessun evento nei prossimi giorni.' : 'Oggi non hai eventi in agenda.';
+    d.textContent = (!dopo.length && !(eventiTel && eventiTel.t) && a && /Nessun evento/i.test(a.testo)) ? 'Nessun evento nei prossimi giorni.' : 'Oggi non hai eventi in agenda.';
     eo.appendChild(d);
   }
   oggi.forEach(ev => {
@@ -710,7 +736,8 @@ function renderAgenda(a) {
     d.appendChild(o); d.appendChild(t);
     en.appendChild(d);
   });
-  $('#agAgg').textContent = 'AGGIORNATO ' + new Date(a.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
+  const tAgg = (eventiTel && eventiTel.t) ? eventiTel.t : a.t;
+  $('#agAgg').textContent = 'AGGIORNATO ' + new Date(tAgg).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).toUpperCase();
 }
 /* ---------- PROMEMORIA ---------- */
 let promDati = null;
@@ -769,10 +796,15 @@ function promemoriaTestoPerJarvis() {
 }
 const RE_AGENDA = /calendario|agenda|appuntament|impegn|libero|libera|occupat|riunion|evento|eventi|scadenz/i;
 function agendaTestoPerJarvis() {
-  if (!agendaDati) return '';
+  if (!agendaDati && !(eventiTel && eventiTel.t)) return '';
+  let corpo, quando_ = (eventiTel && eventiTel.t) ? eventiTel.t : agendaDati.t;
+  if (eventiTel && eventiTel.t) {
+    const e = eventiAgenda();
+    corpo = e.oggi.concat(e.dopo).map(x => x.titolo + ' - ' + x.dow + ' ' + x.giorno + ' ' + x.mese + ', ' + x.orario + (x.luogo ? ' - ' + x.luogo : '')).join(' | ') || 'Nessun evento nei prossimi giorni.';
+  } else corpo = agendaDati.testo.replace(/\s*\n\s*/g, ' | ');
   return 'Agenda dell\'utente dal suo calendario iCloud, prossimi 7 giorni (inviata dall\'iPhone alle ' +
-    new Date(agendaDati.t).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) +
-    ', non in tempo reale): ' + agendaDati.testo.replace(/\s*\n\s*/g, ' | ') +
+    new Date(quando_).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) +
+    ', non in tempo reale): ' + corpo +
     '. Rispondi usando questi eventi. Se la domanda riguarda un orario non coperto da questi dati, dillo.';
 }
 
@@ -789,7 +821,7 @@ async function caricaStato() {
   if (!cfg.url || !cfg.code) return;
   try {
     const j = await chiama({ azione: 'stato' });
-    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); renderAgenda(j.agenda); renderPromemoria(j.promemoria); srv('memoria', 'ok'); }
+    if (j.stats) { recenti = j.recenti || []; aggiornaStats(j.stats); mostraRecenti(); renderSalute(j.salute); if (j.eventi && j.eventi.t) eventiTel = j.eventi; renderAgenda(j.agenda); renderPromemoria(j.promemoria); srv('memoria', 'ok'); }
     else if (j.risposta) { log('sys', j.risposta); srv('memoria', 'ko'); }
   } catch (e) { log('sys', 'Memoria non raggiungibile: ' + e.message); srv('memoria', 'ko'); }
 }
@@ -1137,7 +1169,7 @@ function costruisciBriefing(avvio) {
     p.push('A ' + meteoOra.citta + ' ci sono ' + meteoOra.temp + ' gradi, ' + meteoOra.cond.toLowerCase() + '. Oggi minima ' + meteoOra.min +
       ' e massima ' + meteoOra.max + (meteoOra.pioggia != null ? ', probabilità di pioggia ' + meteoOra.pioggia + ' percento.' : '.'));
   }
-  if (agendaDati) {
+  if (agendaDati || eventiTel) {
     const ev = eventiAgenda().oggi.filter(e => !e.passato);
     if (!ev.length) p.push('Oggi non hai altri eventi in agenda.');
     else p.push('Oggi ti restano ' + ev.length + (ev.length === 1 ? ' evento: ' : ' eventi: ') +
@@ -1178,7 +1210,7 @@ async function avvia() {
   await sleep(1200);
   if (meteoOra) bootRiga('METEO: ' + meteoOra.citta.toUpperCase() + ' ' + meteoOra.temp + '°C, ' + meteoOra.cond.toUpperCase());
   await sleep(1200);
-  if (agendaDati) bootRiga('CALENDARIO: ' + eventiAgenda().oggi.length + ' EVENTI OGGI');
+  if (agendaDati || eventiTel) bootRiga('CALENDARIO: ' + eventiAgenda().oggi.length + ' EVENTI OGGI');
   await sleep(1200);
   if (Object.keys(saluteDati).length) bootRiga('SALUTE: DATI RICEVUTI');
   barra(100);
@@ -1204,7 +1236,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v16');
+log('sys', 'Jarvis pagina v17');
 </script>
 </body>
 </html>
