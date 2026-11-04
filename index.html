@@ -1039,10 +1039,35 @@ async function proponi(q) {
   parla(frase);
   return true;
 }
+const RE_MUSICA = /^\s*(?:jarvis[ ,]*)?(?:per favore[ ,]*|puoi[ ]+)?(?:(?:metti|mettimi|fai partire|fammi sentire|voglio ascoltare|ascolto|riproduci|suona|play)\s+(?:la canzone|il brano|la musica di|la musica|il disco|l'album|l’album|la playlist|il pezzo)\s+|(?:riproduci|suona|fai partire|fammi sentire|voglio ascoltare|play)\s+)(.+?)\s*[.!?]?\s*$/i;
+function proponiMusica(q) {
+  if (/calendario|agenda|promemoria|evento|sveglia|timer|spesa/i.test(q)) return false;
+  const m = RE_MUSICA.exec(q);
+  if (!m) return false;
+  let t = m[1].replace(/^(?:i|gli|le|il|lo|la|l'|un|una|della|dei|di)\s+/i, '').trim();
+  const sp = /^(.+?)\s+(?:dei|degli|delle|della|dello|di|by)\s+(.+)$/i.exec(t);
+  const titolo = sp ? sp[1].trim() : t;
+  if (!titolo) return false;
+  pendente = { tipo: 'musica', titolo: titolo, originale: t };
+  $('#confT').textContent = 'MUSICA · CONFERMA';
+  $('#confD').style.whiteSpace = 'pre-line';
+  $('#confD').textContent = t;
+  $('#bOk').textContent = 'PLAY';
+  $('#conf').style.display = 'flex';
+  const frase = 'Metto ' + t + '. Premi play per confermare.';
+  log('jarvis', frase);
+  parla(frase);
+  return true;
+}
 function eseguiConferma() {
   if (!pendente) return;
   const j = pendente;
   nascondiConferma();
+  if (j.tipo === 'musica') {
+    log('sys', 'Musica: ' + j.titolo);
+    location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Musica Jarvis') + '&input=text&text=' + encodeURIComponent(j.titolo);
+    return;
+  }
   if (j.tipo === 'cancella') {
     log('sys', 'Cancello: ' + j.titolo);
     location.href = 'shortcuts://run-shortcut?name=' + encodeURIComponent('Jarvis Cancella') + '&input=text&text=' +
@@ -1069,6 +1094,7 @@ async function chiedi(q) {
     if (document.body.dataset.s === 'thinking') $('#stato').textContent = 'ELABORAZIONE ' + Math.round((Date.now() - t0) / 1000) + 's';
   }, 1000);
   try {
+    if (proponiMusica(q)) return;
     if (RE_CANC.test(q)) {
       let gestita = false;
       try { gestita = await proponiCancella(q); } catch (e) { log('sys', 'Non riesco a interpretare la richiesta: ' + e.message); }
@@ -1236,7 +1262,7 @@ if (/iPhone/.test(navigator.userAgent)) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(caricaStato, 1500); });
 setInterval(caricaMeteo, 1800000);
 setInterval(() => { if (!document.hidden) caricaStato(); }, 180000);
-log('sys', 'Jarvis pagina v19');
+log('sys', 'Jarvis pagina v20');
 </script>
 </body>
 </html>
